@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+// Отправка подборки в Telegram: читает digest-<дата>.tg.json (его пишет radar.js --digest) и шлёт сообщения через Bot API.
+// Токен и чат — только из окружения (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Без флага --yes ничего не отправляет.
+//
+//   node src/send.js data/digest-2026-11-18.tg.json          — показать, что будет отправлено
+//   node src/send.js data/digest-2026-11-18.tg.json --yes    — отправить
+import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+
+const API = 'https://api.telegram.org';
+
+/**
+ * Кнопки с callback_data требуют приёмника нажатий, которого в пакете нет: в отправку идут только кнопки-ссылки
+ * и «Скопировать текст». Пустые ряды выбрасываются.
+ */
+export function workingKeyboard(markup) {
+  const rows = (markup?.inline_keyboard ?? []).map((row) => row.filter((b) => !b.callback_data)).filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : undefined;
+}
+
+export function prepare(messages) {
+  return messages.map((m) => {
+    const { reply_markup, ...rest } = m;
+    const kb = workingKeyboard(reply_markup);
+    return kb ? { ...rest, reply_markup: kb } : rest;
+  });
+}
+
+/**
+ * @param {object[]} messages тела sendMessage без chat_id
+ * @param {{ token: string, chatId: string, fetchImpl?: Function, pauseMs?: number }} opts
+ * @returns {Promise<{ sent: number, failed: { index: number, error: string }[] }>}
+ */
+export async function sendAll(messages, { token, chatId, fetchImpl = fetch, pauseMs = 1100 }) {
+  if (!token || !chatId) throw new Error('нужны TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в окружении');
+  let sent = 0;
+  const failed = [];
+  for (const [index, m] of prepare(messages).entries()) {
+    try {
+      const res = await fetchImpl(`${API}/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...m, chat_id: chatId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.ok === false) failed.push({ index, error: String(body.description ?? `HTTP ${res.status}`).slice(0, 200) });
+      else sent++;
+    } catch (e) {
+      failed.push({ index, error: String(e?.message ?? e).replaceAll(token, '***').slice(0, 200) });
+    }
+    if (pauseMs && index < messages.length - 1) await new Promise((r) => setTimeout(r, pauseMs));
+  }
+  return { sent, failed };
+}
+
+async function cli(argv) {
+  const file = argv.find((a) => !a.startsWith('--'));
+  if (!file) throw new Error('укажите файл digest-<дата>.tg.json');
+  const messages = JSON.parse(readFileSync(file, 'utf8'));
+  if (!Array.isArray(messages)) throw new Error('в файле ожидается список сообщений');
+  if (!argv.includes('--yes')) {
+    process.stdout.write(`Будет отправлено сообщений: ${messages.length}. Для отправки добавьте --yes.\n`);
+    for (const m of prepare(messages)) process.stdout.write(`---\n${String(m.text).replace(/<[^>]+>/g, '')}\n`);
+    return;
+  }
+  const { sent, failed } = await sendAll(messages, { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID });
+  process.stdout.write(`Отправлено: ${sent}, ошибок: ${failed.length}.\n`);
+  for (const f of failed) process.stderr.write(`сообщение ${f.index + 1}: ${f.error}\n`);
+  if (failed.length) process.exitCode = 1;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(process.argv.slice(2)).catch((e) => {
+    process.stderr.write(`${e.message}\n`);
+    process.exit(1);
+  });
+}

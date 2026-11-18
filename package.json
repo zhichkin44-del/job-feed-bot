@@ -1,0 +1,16 @@
+{
+  "name": "job-feed-bot",
+  "version": "0.1.0",
+  "description": "Сборщик вакансий из открытых лент: дедупликация, отбор по правилам, письма из утверждённых фраз с проверкой цифр, отправка в Telegram",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "bin": { "job-feed-bot": "src/radar.js" },
+  "scripts": {
+    "start": "node src/radar.js",
+    "sample": "node src/radar.js --rescore sample/run.json --digest --no-seen --out data",
+    "send": "node src/send.js",
+    "test": "node --test \"test/*.test.js\""
+  }
+}
