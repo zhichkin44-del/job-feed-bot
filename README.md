@@ -7,6 +7,12 @@ or in the vacancy title, and sends a card digest to Telegram.
 
 Who it is for: a job seeker who wants a short, verified daily shortlist without an AI model.
 
+## Screenshots
+
+The bot's digest in Telegram, rendered from the sample run (`npm run sample`, fictional vacancies). The bot writes in Russian for the Russian job market; this screenshot shows the same messages translated to English.
+
+![Telegram digest: vacancy cards, buttons and the cover letter](docs/screenshots/telegram-digest.png)
+
 > The repository ships a **template** profile and phrase bank with example values. Fill in your own.
 > The phrases and vacancy texts are Russian by design (the bot targets the Russian job market). See
 > [Language](#language).
@@ -23,12 +29,6 @@ Who it is for: a job seeker who wants a short, verified daily shortlist without 
   are not in the approved phrases. A rejected vacancy never reaches the digest.
 - **Telegram digest:** card messages with links and copy-text buttons. Sending is opt-in (`--yes`).
 - **Reports and tests:** Markdown and JSON reports per run; 44 unit tests, no network access in tests.
-
-## Screenshots
-
-The bot's digest in Telegram, rendered from the sample run (`npm run sample`, fictional vacancies). The bot writes in Russian for the Russian job market; this screenshot shows the same messages translated to English.
-
-![Telegram digest: vacancy cards, buttons and the cover letter](docs/screenshots/telegram-digest.png)
 
 ## Requirements
 
