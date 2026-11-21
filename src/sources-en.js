@@ -1,10 +1,10 @@
-// Английский рынок удалённых ИИ-вакансий — только открытые официальные ленты (проверено 06.11.2026, robots.txt и условия):
-//   HN «Ask HN: Who is hiring?» — официальный поиск Algolia (hn.algolia.com/api), комментарий = вакансия;
-//   Remote OK — официальный API remoteok.com/api; условия: ссылка на вакансию на Remote OK и Remote OK как источник
-//     (в подборке так и есть: ведём на их страницу). В robots.txt закрыт для ИИ-краулеров — поэтому только API, не сайт;
-//   We Work Remotely — официальная RSS; cryptojobslist — официальная RSS (api.cryptojobslist.com/jobs.rss, на неё ведёт их /rss).
-// Не берём: Wellfound (открытой ленты нет, страницы вакансий закрыты в robots.txt), web3.career (без регистрации ленты нет).
-// Текст вакансий — недоверенные данные. Оплата в отчёте — доллары в месяц.
+// English market of remote AI vacancies: only open official feeds (checked 06.11.2026, robots.txt and terms):
+//   HN "Ask HN: Who is hiring?": the official Algolia search (hn.algolia.com/api), a comment is a vacancy;
+//   Remote OK: the official API remoteok.com/api; terms: a link to the vacancy on Remote OK, and Remote OK as the source
+//     (the digest does exactly that: we lead to their page). Their robots.txt is closed to AI crawlers, hence only the API, not the site;
+//   We Work Remotely: the official RSS; cryptojobslist: the official RSS (api.cryptojobslist.com/jobs.rss, which their /rss points to).
+// Not taken: Wellfound (no open feed, vacancy pages closed in robots.txt), web3.career (no feed without registration).
+// Vacancy text is untrusted data. Pay in the report is dollars per month.
 import { decode, stripTags, EN_MIN_USD } from './lib.js';
 import { ddmmyyyy } from './sources.js';
 import { regionClasses } from './geo.js';
@@ -15,32 +15,32 @@ export const EN_FEEDS = {
   remoteok: 'https://remoteok.com/api',
   wwr: 'https://weworkremotely.com/remote-jobs.rss',
   cryptojobs: 'https://api.cryptojobslist.com/jobs.rss',
-  // Himalayas — официальный API (himalayas.app/api, сверено 06.11): данные обновляются раз в сутки; без ключа — общая
-  // квота, поэтому 5 запросов в день. Условия: кнопка отклика — applicationLink без изменений, Himalayas виден как
-  // источник, вакансии не передаём другим площадкам, истёкшие убираем.
-  // Remote OK по тегам (тот же официальный API, ?tag=): общая лента даёт ~100 свежих вакансий любых профессий, ИИ там редкость
+  // Himalayas: the official API (himalayas.app/api, checked 06.11): data is updated once a day; without a key there is a shared
+  // quota, hence 5 requests per day. Terms: the apply button is applicationLink unchanged, Himalayas is shown as
+  // the source, vacancies are not passed to other platforms, expired ones are removed.
+  // Remote OK by tags (the same official API, ?tag=): the general feed gives ~100 fresh vacancies of any profession, AI is rare there
   remoteokTag: (tag) => `https://remoteok.com/api?${new URLSearchParams({ tag })}`,
-  // WWR: категория «программирование» — свежие 25, почти все «Anywhere in the World»
+  // WWR: the "programming" category, the latest 25, almost all "Anywhere in the World"
   wwrProgramming: 'https://weworkremotely.com/categories/remote-programming-jobs.rss',
-  // Remotive — официальный API: условия — ссылка на вакансию на Remotive и Remotive как источник (так и есть: ведём на их
-  // страницу), вакансии третьим площадкам не передаём; данные меняются медленно, просят не чаще 4 раз в сутки (у нас 2).
+  // Remotive: the official API. Terms: a link to the vacancy on Remotive, and Remotive as the source (that is exactly what happens: we lead to their
+  // page); vacancies are not passed to third platforms; data changes slowly, they ask for no more than 4 times a day (we do 2).
   remotive: (q) => `https://remotive.com/api/remote-jobs?${new URLSearchParams({ search: q, limit: '100' })}`,
   himalayas: (q) => `https://himalayas.app/jobs/api/search?${new URLSearchParams({ q, worldwide: 'true', sort: 'recent', page: '1' })}`,
 };
 
-/** Теги Remote OK и запросы к Remotive (по 2 запроса в сутки, не больше 4 — просьба площадки). */
+/** Remote OK tags and queries to Remotive (2 queries per day, no more than 4: the platform's request). */
 export const REMOTEOK_TAGS = ['ai', 'llm'];
 export const REMOTIVE_QUERIES = ['AI', 'LLM'];
 
-/** Запросы к Himalayas: по одному на тему, только вакансии, открытые всему миру. */
+/** Queries to Himalayas: one per topic, only vacancies open to the whole world. */
 export const HIMALAYAS_QUERIES = ['LLM', 'AI engineer', 'AI agents', 'generative AI', 'machine learning'];
 
-/** Нижняя граница для английского рынка: $3000 в месяц — та же, что в оценке (lib.js). */
+/** Lower bound for the English market: $3000 per month, the same as in the scoring (lib.js). */
 export const EN_MIN_USD_MONTH = EN_MIN_USD;
 
 /**
- * Оплата из свободного английского текста → { from, to } долларов в месяц или null.
- * «$120k–$150k», «$150,000», «$60-80/hr», «$8,000/month». Годовое делится на 12, почасовое × 160.
+ * Pay from free English text → { from, to } dollars per month, or null.
+ * "$120k–$150k", "$150,000", "$60-80/hr", "$8,000/month". Annual is divided by 12, hourly multiplied by 160.
  */
 export function usdMonthly(text) {
   const t = String(text ?? '').replace(/,/g, '');
@@ -51,16 +51,16 @@ export function usdMonthly(text) {
   const k1 = m[2] || (m[4] && !m[2] && Number(m[1]) < 1000 ? m[4] : '');
   let a = Number(m[1]) * (k1 ? 1000 : 1);
   let b = m[3] ? Number(m[3]) * (m[4] ? 1000 : 1) : a;
-  if (a === 0) a = b; // «$0 – $200,000»: ноль значит «не указано»
+  if (a === 0) a = b; // "$0 – $200,000": zero means "not stated"
   const unit = String(m[5] || '').toLowerCase();
   const per = /hr|hour|\bh\b/.test(unit) ? 160 : /mo|month/.test(unit) ? 1 : a >= 20000 || /yr|year|annual/.test(unit) ? 1 / 12 : 1;
   a *= per;
   b *= per;
-  if (a < 300 && b < 300) return null; // «$5 bonus» и прочий шум
+  if (a < 300 && b < 300) return null; // "$5 bonus" and other noise
   return { from: Math.round(Math.min(a, b)), to: Math.round(Math.max(a, b)) };
 }
 
-/** Текст оплаты для карточки: «$9,000–12,500/мес» или «не указан». */
+/** Pay text for the card: «$9,000–12,500/мес» or «не указан». */
 export function usdText(range) {
   if (!range) return 'не указан';
   const f = (n) => `$${n.toLocaleString('en-US')}`;
@@ -69,15 +69,15 @@ export function usdText(range) {
 
 const REMOTE = /\bremote\b|anywhere|worldwide|distributed/i;
 
-/** Ветка «Who is hiring»: id свежей (по найденным историям Algolia). */
+/** The "Who is hiring" branch: the id of the fresh one (from the found Algolia threads). */
 export function latestHiringThread(searchJson) {
   const hits = (searchJson?.hits || []).filter((h) => /who is hiring/i.test(h.title || ''));
   hits.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   return hits[0]?.objectID || null;
 }
 
-// ── Первая строка поста HN: «Компания | Должность | Место | Тип занятости | Оплата | Ссылка» (порядок у каждого свой) ──
-// Название вакансии — только должность; город, страна и «удалёнка» — в поле региона.
+// ── First line of an HN post: "Company | Position | Place | Employment type | Pay | Link" (the order is each poster's own) ──
+// The vacancy title is only the position; the city, country and "remote" go into the region field.
 const URL_PART = /^(?:https?:\/\/|www\.)\S+$|^[\w-]+(?:\.[\w-]+)+(?:\/\S*)?$/i;
 const SALARY_PART = /[$£€]\s?\d|\d\s?k\b|\/\s?(?:hr|hour|yr|year|mo|month)\b|\b(?:usd|eur|gbp)\b/i;
 const TAG_PART =
@@ -85,25 +85,25 @@ const TAG_PART =
 const PLACE_WORDS = /\b(?:remote|on-?site|in[- ]office|hybrid|worldwide|anywhere|distributed|relocat\w+)\b/i;
 const PLACE_TOKENS = /\b(?:NYC|SF|LA|DC|EU|EEA|EMEA|US|USA|UK|CAN|LATAM|APAC|CET|CEST|EST|PST|PT|ET)\b/;
 const CITY_STATE = /^[A-Z][A-Za-z.'’ -]+,\s*[A-Z]{2}\b/;
-/** Часть начинается с места: «REMOTE (US Citizenship Required)» — это место, а не «условие». */
+/** A part starts with a place: "REMOTE (US Citizenship Required)" is a place, not a "condition". */
 const PLACE_START = /^(?:fully |100% )?(?:remote|hybrid|on-?site|in[- ]office)\b/i;
 const CITIES =
   /\b(?:new york|san francisco|los angeles|seattle|austin|boston|chicago|miami|denver|atlanta|portland|san diego|palo alto|mountain view|brooklyn|washington|toronto|vancouver|montreal|london|berlin|paris|amsterdam|dublin|lisbon|madrid|barcelona|munich|zurich|stockholm|copenhagen|tel aviv|singapore|sydney|melbourne|bremen|hamburg|warsaw|prague|vienna|tokyo|bangalore|bengaluru)\b/i;
-// «Сильные» слова должности: по ним часть — точно должность. «Слабые» (ai, data, product…) — только если сильных нет.
+// "Strong" position words: by them a part is definitely a position. "Weak" ones (ai, data, product…) only if there are no strong ones.
 const ROLE_STRONG =
   /\b(?:engineers?|developers?|designers?|managers?|leads?|heads?|directors?|architects?|scientists?|researchers?|analysts?|devops|sre|cto|ceo|vp|founders?|founding|consultants?|recruiters?|marketers?|specialists?|administrators?|interns?|csms?|account executives?|roles?|positions?|openings?|swe|sde)\b/i;
 const ROLE_WEAK =
   /\b(?:ai|ml|llm|data|software|product|sales|ops|operations|support|training|consulting|marketing|backend|frontend|full[- ]?stack|qa)\b/i;
 
-/** Часть строки называет место: удалёнка, регион, город, «Город, ST». */
+/** A part of the line names a place: remote, region, city, "City, ST". */
 const isPlace = (p) => PLACE_WORDS.test(p) || PLACE_TOKENS.test(p) || CITY_STATE.test(p) || CITIES.test(p) || regionClasses(p).length > 0;
 
-/** «REMOTE» → «Remote» и т. п.: в поле региона не кричим капсом. */
+/** "REMOTE" → "Remote" and the like: we do not shout in caps in the region field. */
 const calm = (s) => s.replace(/\b(REMOTE|HYBRID|ONSITE|ON-SITE|WORLDWIDE|ANYWHERE)\b/g, (w) => w[0] + w.slice(1).toLowerCase());
 
 /**
- * Часть-должность без места: «Remote Software Engineer» → { title: «Software Engineer», places: [«Remote»] }, «Engineer (Remote, US)» и
- * «Engineer - NYC» — то же. Скобки без места («AI Engineer (LLM agents)») остаются в названии.
+ * A position part without a place: "Remote Software Engineer" → { title: "Software Engineer", places: ["Remote"] }, "Engineer (Remote, US)" and
+ * "Engineer - NYC" are the same. Brackets without a place ("AI Engineer (LLM agents)") stay in the title.
  */
 function splitRole(part) {
   const places = [];
@@ -126,7 +126,7 @@ function splitRole(part) {
   return { title: t.replace(/[\s,;:|/+-]+$/, '').trim(), places };
 }
 
-/** Название компании: без адреса сайта, без висящей скобки или двоеточия, скобки с пояснением («(YC W19)») остаются целиком. */
+/** Company name: without the site address, without a dangling bracket or colon; brackets with a note ("(YC W19)") stay in full. */
 function cleanCompany(raw) {
   let c = String(raw ?? '')
     .replace(/\(\s*https?:\/\/[^)]*\)?|https?:\/\/\S+/g, '')
@@ -134,7 +134,7 @@ function cleanCompany(raw) {
   c = c.replace(/[\s,:;]+$/, '').trim();
   const opens = (c.match(/\(/g) || []).length;
   const closes = (c.match(/\)/g) || []).length;
-  if (opens > closes) c = c.replace(/\s*\([^)]*$/, '').trim(); // скобка не закрыта → без хвоста; закрытая «(YC W19)» остаётся
+  if (opens > closes) c = c.replace(/\s*\([^)]*$/, '').trim(); // bracket not closed → drop the tail; a closed "(YC W19)" stays
   return c
     .replace(/[\s,:;(]+$/, '')
     .trim()
@@ -142,8 +142,8 @@ function cleanCompany(raw) {
 }
 
 /**
- * Первая строка поста HN → { company, title, region } или null (нет «|» — это не вакансия). Название — только должность
- * (если её в строке нет — «Open roles at <компания>»), место и удалёнка — в регион. Ссылки, оплата и тип занятости не в названии.
+ * The first line of an HN post → { company, title, region } or null (no "|" means it is not a vacancy). The title is only the position
+ * (if there is none in the line: "Open roles at <company>"); place and remote go into the region. Links, pay and employment type are not in the title.
  * @param {string} first
  */
 export function parseHnHead(first) {
@@ -162,7 +162,7 @@ export function parseHnHead(first) {
     }
     if (SALARY_PART.test(p) || TAG_PART.test(p)) continue;
     const strong = ROLE_STRONG.test(p);
-    // «слабое» название — короткое словосочетание, а не перечень технологий через запятую
+    // a "weak" title is a short phrase, not a comma-separated list of technologies
     const weak = !strong && ROLE_WEAK.test(p) && !isPlace(p) && !p.includes(',') && p.split(/\s+/).length <= 6;
     if (strong || weak) {
       const { title, places: here } = splitRole(p);
@@ -179,8 +179,8 @@ export function parseHnHead(first) {
 }
 
 /**
- * Пост HN (простой текст, первая строка — «Компания | …») → поля вакансии: название, компания, регион, удалёнка, оплата.
- * Тот же разбор — для новых постов (parseHnThread) и для пересчёта записей базы (migrate-hn.js).
+ * An HN post (plain text, the first line "Company | …") → vacancy fields: title, company, region, remote, pay.
+ * The same parsing: for new posts (parseHnThread) and for recalculating the database records (migrate-hn.js).
  * @param {string} text
  */
 export function hnFields(text) {
@@ -192,7 +192,7 @@ export function hnFields(text) {
   return {
     title: head.title,
     company: head.company,
-    // сам по себе «remote» — по-прежнему «remote»: поле читают фильтры региона (geo.js)
+    // "remote" by itself is still "remote": the region filters read this field (geo.js)
     region: head.region || (remote ? 'remote' : ''),
     remote,
     usd: pay,
@@ -200,7 +200,7 @@ export function hnFields(text) {
   };
 }
 
-/** Комментарии ветки HN → вакансии (только верхний уровень, первая строка «Компания | Должность | …»). */
+/** HN thread comments → vacancies (top level only, the first line "Company | Position | …"). */
 export function parseHnThread(itemJson) {
   const out = [];
   for (const c of itemJson?.children || []) {
@@ -220,12 +220,12 @@ export function parseHnThread(itemJson) {
   return out;
 }
 
-/** Remote OK API → вакансии (первый элемент массива — их условия, не вакансия). */
+/** Remote OK API → vacancies (the first array element is their terms, not a vacancy). */
 export function parseRemoteOk(json) {
   const out = [];
   for (const x of Array.isArray(json) ? json.slice(1) : []) {
     if (!x?.id || !x.position) continue;
-    // вилка Remote OK — годовая в долларах; 0 значит «не указано»
+    // Remote OK range: annual, in dollars; 0 means "not stated"
     const lo = Number(x.salary_min) > 0 ? Number(x.salary_min) : 0;
     const hi = Number(x.salary_max) > 0 ? Number(x.salary_max) : 0;
     const pay = lo || hi ? { from: Math.round((lo || hi) / 12), to: Math.round((hi || lo) / 12) } : null;
@@ -236,7 +236,7 @@ export function parseRemoteOk(json) {
       title: decode(String(x.position)).slice(0, 160),
       company: decode(String(x.company || '')).slice(0, 80),
       created: ddmmyyyy(x.date),
-      // «location» в API — «Anywhere in the World», «USA Only»…; пусто — открыта всем
+      // "location" in the API is "Anywhere in the World", "USA Only"…; empty means open to all
       region:
         String(x.location || '')
           .trim()
@@ -252,7 +252,7 @@ export function parseRemoteOk(json) {
 
 const REMOTIVE_LINK = /^https:\/\/remotive\.com\/remote-jobs\/[\w-]{1,60}\/[\w-]{1,200}$/;
 
-/** Remotive API → вакансии. Ссылка — их страница вакансии (условие площадки); оплата из текста «$25k - $35k»; регион — их поле. */
+/** Remotive API → vacancies. The link is their vacancy page (the platform's term); pay from the text "$25k - $35k"; region is their field. */
 export function parseRemotive(json) {
   const out = [];
   for (const x of Array.isArray(json?.jobs) ? json.jobs : []) {
@@ -283,8 +283,8 @@ const HIM_LINK = /^https:\/\/himalayas\.app\/companies\/[\w-]{1,80}\/jobs\/[\w-]
 const PER_MONTH = { hourly: 160, daily: 21, weekly: 4.33, monthly: 1, annual: 1 / 12, yearly: 1 / 12 };
 
 /**
- * Ответ Himalayas /jobs/api/search → вакансии. Ссылка — applicationLink без изменений (условие Himalayas), только
- * их страница вакансии; оплата — в долларах в месяц (почасовая × 160, годовая / 12); истёкшие — пропускаем.
+ * Himalayas /jobs/api/search response → vacancies. The link is applicationLink unchanged (Himalayas' term), only
+ * their vacancy page; pay in dollars per month (hourly × 160, annual / 12); expired ones are skipped.
  */
 export function parseHimalayas(json, now = Date.now()) {
   const out = [];
@@ -319,7 +319,7 @@ const tag = (xml, name) => {
   return m ? m[1].replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/, '$1').trim() : '';
 };
 
-/** RSS We Work Remotely или cryptojobslist → вакансии. В WWR заголовок «Компания: Роль». */
+/** RSS of We Work Remotely or cryptojobslist → vacancies. In WWR the title is "Company: Role". */
 export function parseEnRss(xml, site) {
   const out = [];
   for (const m of String(xml ?? '').matchAll(/<item>([\s\S]*?)<\/item>/g)) {
@@ -344,7 +344,7 @@ export function parseEnRss(xml, site) {
       company: company.slice(0, 80),
       created: ddmmyyyy(tag(item, 'pubDate')),
       region: region || 'remote',
-      // WWR — только удалёнка по определению площадки; у cryptojobslist — по тексту
+      // WWR is remote only by the platform's definition; for cryptojobslist it is by the text
       remote: site === 'wwr' || REMOTE.test(`${title} ${region} ${desc.slice(0, 800)}`),
       usd: pay,
       salaryText: usdText(pay),

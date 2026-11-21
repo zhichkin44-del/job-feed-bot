@@ -1,5 +1,5 @@
-// Краткое описание вакансии для карточки бота: что делать и что требуют — из текста самой вакансии,
-// без мнения бота и советов «на что надавить». Только выдержки из текста работодателя, ничего не придумывается.
+// Short vacancy summary for the bot card: what to do and what is required, taken from the vacancy text itself,
+// without the bot's opinion or advice on what to push. Only excerpts from the employer's text; nothing is invented.
 
 const TASK_RE =
   /^(обязанности|задачи|основные задачи|чем (предстоит|будешь|будете|нужно) занима\S*|что (предстоит |нужно |надо )?делать|что ты будешь делать|responsibilities|what you('|’)ll (do|be doing)|your role|in this role|the role)(?=$|[\s:：,.;!—-])/i;
@@ -7,11 +7,11 @@ const NEED_RE =
   /^(требования|что (мы )?ждём( от тебя| от вас)?|мы ждём|ожидаем|ожидания|нам важно|что нужно|кого (мы )?ищем|ты нам подходишь|наш кандидат|requirements|qualifications|what you('|’)ll need|you have|must[- ]haves?|about you|who you are|what we('|’)re looking for)(?=$|[\s:：,.;!—-])/i;
 const OTHER_RE =
   /^(условия|мы предлагаем|что мы предлагаем|предлагаем|о компании|о нас|будет плюсом|плюсом будет|плюсом|бонусы|about us|benefits|what we offer|we offer|perks|nice to have|bonus points)(?=$|[\s:：,.;!—-])/i;
-// \b в JS — только латиница, поэтому граница слова после кириллицы задаётся явно
+// \b in JS is Latin-only, so the word boundary after Cyrillic is set explicitly
 
 const MAX = 220;
 
-/** Обрезка по границе слова с многоточием. */
+/** Trim at a word boundary, with an ellipsis. */
 export function clip(s, max = MAX) {
   const t = String(s ?? '')
     .replace(/\s+/g, ' ')
@@ -25,8 +25,8 @@ export function clip(s, max = MAX) {
 const bullet = (s) => s.replace(/^[\s\-–—•·*●▪◦✓✔>]+/, '').trim();
 
 /**
- * { tasks, needs, about } — строки ≤ 220 знаков; пустая строка, если раздела нет.
- * about — первые фразы текста, только когда не нашлось ни задач, ни требований.
+ * { tasks, needs, about } — lines up to 220 characters; an empty string if there is no such section.
+ * about — the first phrases of the text, only when neither tasks nor requirements were found.
  */
 export function briefOf(v) {
   const text = String(v?.description || v?.text || '');
@@ -46,7 +46,7 @@ export function briefOf(v) {
         : [null, ''];
     if (key) {
       mode = key;
-      // «Требования: Python, LLM» — содержимое после двоеточия; «Требования к кандидату» — просто заголовок
+      // "Требования: Python, LLM" — the content after the colon; "Требования к кандидату" — just a heading
       const colon = rest.search(/[:：]/);
       const inline = colon >= 0 ? rest.slice(colon + 1).trim() : '';
       if (inline.length > 10) got[key].push(inline);

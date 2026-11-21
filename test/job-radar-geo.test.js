@@ -1,5 +1,5 @@
-// Язык и регион вакансии: письменный английский + живой перевод — подходит, разговорный — помечаем и не отсекаем;
-// удалёнка любых стран: регион (весь мир / СНГ / Европа / США / Азия), новые открытые источники, поднятие оценки за асинхронную работу.
+// Language and region of a vacancy: written English + live translation fits; spoken is flagged and not cut;
+// remote work from any country: region (whole world / CIS / Europe / USA / Asia), new open sources, a score lift for asynchronous work.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { classify, geoMatches, geoOf, isAsyncWork, langFits, langMatches, langOf, needsSpoken } from '../src/geo.js';
@@ -18,7 +18,7 @@ const en = (o = {}) => ({
   ...o,
 });
 
-test('язык: русская вакансия — «русский»; английская — «англ. письменный»; свободный разговорный — «нужен разговорный» (помечаем, не отсекаем)', () => {
+test('language: a Russian vacancy is "русский"; English is "англ. письменный"; free spoken is "нужен разговорный" (flagged, not cut)', () => {
   assert.equal(langOf({ site: 'habr', title: 'ИИ-инженер', text: 'Строим агентов на LLM, удалённо' }), 'ru');
   assert.equal(langOf(en()), 'en_written');
   assert.equal(
@@ -49,7 +49,7 @@ test('язык: русская вакансия — «русский»; англ
   );
 });
 
-test('асинхронная и письменная работа — признак; «asyncio» и «async/await» в стеке — не он', () => {
+test('asynchronous and written work is a sign; "asyncio" and "async/await" in the stack are not it', () => {
   for (const t of [
     'We are an async-first company',
     'Fully async remote team',
@@ -62,7 +62,7 @@ test('асинхронная и письменная работа — призн
     assert.equal(isAsyncWork(t), false, t);
 });
 
-test('регион: площадки СНГ — СНГ; английские — по полю «регион», потом по ограничению в тексте; без ограничений — весь мир', () => {
+test('region: CIS platforms are CIS; English ones by the "region" field, then by the restriction in the text; without restrictions the whole world', () => {
   assert.deepEqual(geoOf({ site: 'habr', region: '' }), ['cis']);
   assert.deepEqual(geoOf({ site: 'telegram', region: '', text: 'remote anywhere in the world' }), ['cis'], 'каналы Telegram — СНГ');
   assert.deepEqual(geoOf(en({ region: 'Anywhere in the World' })), ['world']);
@@ -81,7 +81,7 @@ test('регион: площадки СНГ — СНГ; английские —
     'где компания — не ограничение для кандидата',
   );
   assert.deepEqual(geoOf(en({ text: 'Join us — we hire in all countries' })), ['world'], '«us» — местоимение, не США');
-  // HN: место — в коротких частях первой строки; длинный абзац в ней не читаем
+  // HN: place is in the short parts of the first line; a long paragraph in it is not read
   const hn = (first) => ({ site: 'hn', region: 'remote', title: 'AI Engineer', text: first });
   assert.deepEqual(geoOf(hn('Juro | AI Engineer | London | REMOTE (UK) | Full-time')), ['europe']);
   assert.deepEqual(geoOf(hn('River | Staff Engineers | NYC or REMOTE (US, Europe, South America) | $200K')).sort(), ['europe', 'usa']);
@@ -91,7 +91,7 @@ test('регион: площадки СНГ — СНГ; английские —
   assert.deepEqual(geoOf(hn('Acme | AI Engineer | REMOTE (anywhere) | Full-time')), ['world']);
 });
 
-test('фильтры по региону и языку: «Весь мир» — всё; регион — свой и открытые любой стране; «Подходит мне» — русский и письменный английский', () => {
+test('filters by region and language: "Весь мир" is everything; a region is its own and those open to any country; "Подходит мне" is Russian and written English', () => {
   assert.equal(geoMatches(['cis'], ''), true);
   assert.equal(geoMatches(['cis'], 'world'), true);
   assert.equal(geoMatches(['usa'], 'cis'), false);
@@ -104,7 +104,7 @@ test('фильтры по региону и языку: «Весь мир» — 
   assert.equal(langMatches('ru', 'all'), true);
 });
 
-test('оценка: асинхронная работа — плюс; «нужен разговорный» у английской — минус и пометка, не отсев; язык и регион возвращаются', () => {
+test('scoring: asynchronous work is a plus; "нужен разговорный" for English is a minus and a flag, not a cut; language and region are returned', () => {
   const today = new Date('2026-11-07');
   const base = scoreVacancy(en({ text: 'Build LLM agents with Claude and MCP. Remote worldwide.' }), { today });
   assert.equal(base.excluded, null);
@@ -128,7 +128,7 @@ test('оценка: асинхронная работа — плюс; «нуже
   assert.equal(scoreVacancy({ site: 'habr', title: 'ИИ-инженер', text: 'Агенты на LLM, удалённо', remote: true }).lang, 'ru');
 });
 
-test('Remote OK: поле location — регион; теги ai и llm — отдельные запросы того же официального API', () => {
+test('Remote OK: the location field is the region; tags ai and llm are separate queries of the same official API', () => {
   const json = [
     { legal: 'API Terms' },
     {
@@ -155,7 +155,7 @@ test('Remote OK: поле location — регион; теги ai и llm — от
   assert.equal(EN_FEEDS.remoteokTag('ai'), 'https://remoteok.com/api?tag=ai');
 });
 
-test('Remotive (официальный API): ссылка только на их страницу, регион и оплата из их полей, 2 запроса в сутки; чужое — мимо', () => {
+test('Remotive (official API): the link only to their page, region and pay from their fields, 2 queries per day; foreign ones are skipped', () => {
   const json = {
     'legal-notice': 'link back',
     jobs: [
@@ -198,7 +198,7 @@ test('Remotive (официальный API): ссылка только на их
   assert.match(EN_FEEDS.remotive('AI'), /^https:\/\/remotive\.com\/api\/remote-jobs\?search=AI&limit=100$/);
 });
 
-test('сбор: мировые источники — HN, Remote OK (общая лента и теги), WWR (и программирование), Remotive, Himalayas — без входа и без hh', async () => {
+test('collection: world sources: HN, Remote OK (general feed and tags), WWR (and programming), Remotive, Himalayas, without sign-in and without hh', async () => {
   const urls = [];
   const empty = (u) =>
     /hn\.algolia\.com\/api\/v1\/search/.test(u) ? '{"hits":[]}' : /remoteok|remotive|himalayas/.test(u) ? '{}' : '<rss></rss>';

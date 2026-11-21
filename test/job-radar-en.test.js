@@ -1,5 +1,5 @@
-// Английский рынок : открытые ленты HN, Remote OK, We Work Remotely, cryptojobslist;
-// удалёнка, ИИ-агенты, оплата от $3000/мес; английский отклик из фраз RESUME-EN.md; предупреждение про совмещение.
+// English market: open feeds of HN, Remote OK, We Work Remotely, cryptojobslist;
+// remote work, AI agents, pay from $3000/mo; an English application from the RESUME-EN.md phrases; a warning about combining.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -22,7 +22,7 @@ const today = new Date('2026-11-06T00:00:00Z');
 const details = (v) => ({ ok: true, description: v.text, workFormat: 'удалённо', skills: [], experience: '' });
 const score = (v) => scoreVacancy(v, { today, details: details(v) });
 
-test('оплата: годовая, почасовая, месячная — в доллары в месяц; ноль и мелочь — «не указано»', () => {
+test('pay: annual, hourly, monthly in dollars per month; zero and tiny amounts are "not stated"', () => {
   assert.deepEqual(usdMonthly('$120k–$150k'), { from: 10000, to: 12500 });
   assert.deepEqual(usdMonthly('Salary: $150,000'), { from: 12500, to: 12500 });
   assert.deepEqual(usdMonthly('$60-80/hr'), { from: 9600, to: 12800 });
@@ -34,7 +34,7 @@ test('оплата: годовая, почасовая, месячная — в 
   assert.equal(usdText({ from: 9000, to: 12500 }), '$9,000–12,500/мес');
 });
 
-test('HN: свежая ветка «Who is hiring», вакансии — комментарии верхнего уровня «Компания | Роль | …»', () => {
+test('HN: a fresh "Who is hiring" thread; vacancies are top-level comments "Company | Role | …"', () => {
   const search = {
     hits: [
       { objectID: '1', title: 'Ask HN: Who is hiring? (October 2026)', created_at: '2026-10-01T15:00:00Z' },
@@ -65,7 +65,7 @@ test('HN: свежая ветка «Who is hiring», вакансии — ком
   assert.equal(safeUrl(v.url), v.url);
 });
 
-test('Remote OK: первый элемент — условия API, вилка годовая, 0 = не указано; ссылка ведёт на Remote OK', () => {
+test('Remote OK: the first element is the API terms, annual pay, 0 = not stated; the link leads to Remote OK', () => {
   const items = parseRemoteOk([
     { legal: 'API terms' },
     {
@@ -87,7 +87,7 @@ test('Remote OK: первый элемент — условия API, вилка 
   assert.equal(safeUrl(items[0].url), items[0].url);
 });
 
-test('WWR и cryptojobslist: «Компания: Роль», чужие ссылки отброшены', () => {
+test('WWR and cryptojobslist: "Company: Role", foreign links discarded', () => {
   const rss = `<rss><channel>
     <item><title>Helmsted: Founding AI Engineer</title><link>https://weworkremotely.com/remote-jobs/helmsted-founding-ai-engineer</link>
       <description><![CDATA[<p>Agentic systems. $140,000 - $180,000 per year</p>]]></description><pubDate>Wed, 05 Nov 2026 10:00:00 +0000</pubDate></item>
@@ -107,7 +107,7 @@ test('WWR и cryptojobslist: «Компания: Роль», чужие ссыл
   assert.equal(cj[0].company, '');
 });
 
-test('оценка: нужна удалёнка, ИИ и оплата от $3000/мес; английский — не риск, а условие с живым переводом', () => {
+test('scoring: needs remote work, AI and pay from $3000/mo; English is not a risk but a condition with a live translation', () => {
   const base = {
     id: 'hn-1',
     site: 'hn',
@@ -121,7 +121,7 @@ test('оценка: нужна удалёнка, ИИ и оплата от $3000
   assert.ok(ok.score >= 55, String(ok.score));
   assert.ok(ok.risks.includes('общение на английском — письменно и через живой перевод'));
   assert.ok(!ok.risks.includes('нужен английский'));
-  // вилка не фильтр : низкая оплата — та же оценка, в письме всё равно «от 600k»
+  // the range is not a filter: low pay gives the same score; the letter still says "from 600k"
   const low = score({ ...base, usd: { from: 2000, to: EN_MIN_USD - 1 } });
   assert.equal(low.excluded, null);
   assert.equal(low.score, ok.score);
@@ -133,7 +133,7 @@ test('оценка: нужна удалёнка, ИИ и оплата от $3000
   assert.equal(score({ ...base, title: 'Junior AI Engineer (new grad)' }).excluded !== null, true);
 });
 
-test('английский отклик: от первого лица, сайт /en/, строка про письменное общение и перевод, цифры только утверждённые', () => {
+test('English application: first person, site /en/, a line about written communication and translation, only approved figures', () => {
   const v = {
     id: 'wwr-1',
     site: 'wwr',
@@ -168,7 +168,7 @@ test('английский отклик: от первого лица, сайт 
   assert.match(links[1].url, /subject=Application/);
 });
 
-test('совмещение: эксклюзив, NDA/неконкуренция, обязательные часы — предупреждение в «мнении», вакансия не отбрасывается', () => {
+test('combining: exclusivity, NDA/non-compete, mandatory hours: a warning in the "opinion", the vacancy is not discarded', () => {
   const v = (text) => ({ id: 'x', site: 'ru', title: 'AI Lead', score: 85, why: ['руководящая ИИ-роль'], risks: [], description: text });
   assert.deepEqual(multiJobFlags(v('Чистый текст про агентов')), []);
   assert.deepEqual(multiJobFlags(v('This is an exclusive full-time role, no other employment.')), ['запрет совмещения']);
@@ -177,7 +177,7 @@ test('совмещение: эксклюзив, NDA/неконкуренция, 
   assert.deepEqual(multiJobFlags(v('Core hours 9am-5pm EST required')), ['обязательные часы в чужом поясе']);
   assert.deepEqual(multiJobFlags(v('Работа с 10:00 до 19:00 по московскому')), ['обязательные часы в чужом поясе']);
   assert.deepEqual(multiJobFlags(v('PST hours overlap required')), ['обязательные часы в чужом поясе']);
-  // «testing … hours» — не часовой пояс (живая лента WWR, 06.11)
+  // "testing … hours" is not a time zone (live WWR feed, 06.11)
   assert.deepEqual(multiJobFlags(v('Planning, coding, testing, and deployment. Flexible hours.')), []);
 
   const plain = opinionOf(v('Агенты и боты'));
@@ -187,7 +187,7 @@ test('совмещение: эксклюзив, NDA/неконкуренция, 
   assert.match(warned, /Совмещение: ⚠ запрет совмещения, NDA или неконкуренция, обязательные часы в чужом поясе\.$/);
 });
 
-test('Himalayas (официальный API): ссылка — applicationLink без изменений, оплата в $/мес, истёкшие и чужие ссылки — мимо', () => {
+test('Himalayas (official API): the link is applicationLink unchanged, pay in $/mo, expired and foreign links are skipped', () => {
   const NOW = Date.parse('2026-11-06T05:00:00Z');
   const job = (extra = {}) => ({
     title: 'AI Engineer (LLM agents)',

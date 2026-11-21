@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// Отправка подборки в Telegram: читает digest-<дата>.tg.json (его пишет radar.js --digest) и шлёт сообщения через Bot API.
-// Токен и чат — только из окружения (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Без флага --yes ничего не отправляет.
+// Sends the digest to Telegram: reads digest-<date>.tg.json (written by radar.js --digest) and sends the messages through the Bot API.
+// Token and chat come only from the environment (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). Without the --yes flag it sends nothing.
 //
-//   node src/send.js data/digest-2026-11-18.tg.json          — показать, что будет отправлено
-//   node src/send.js data/digest-2026-11-18.tg.json --yes    — отправить
+//   node src/send.js data/digest-2026-11-18.tg.json          — show what will be sent
+//   node src/send.js data/digest-2026-11-18.tg.json --yes    — send
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const API = 'https://api.telegram.org';
 
 /**
- * Кнопки с callback_data требуют приёмника нажатий, которого в пакете нет: в отправку идут только кнопки-ссылки
- * и «Скопировать текст». Пустые ряды выбрасываются.
+ * Buttons with callback_data need a handler for presses, which this package does not have: only link buttons go out
+ * and "Copy text". Empty rows are dropped.
  */
 export function workingKeyboard(markup) {
   const rows = (markup?.inline_keyboard ?? []).map((row) => row.filter((b) => !b.callback_data)).filter((row) => row.length);
@@ -27,7 +27,7 @@ export function prepare(messages) {
 }
 
 /**
- * @param {object[]} messages тела sendMessage без chat_id
+ * @param {object[]} messages sendMessage bodies without chat_id
  * @param {{ token: string, chatId: string, fetchImpl?: Function, pauseMs?: number }} opts
  * @returns {Promise<{ sent: number, failed: { index: number, error: string }[] }>}
  */

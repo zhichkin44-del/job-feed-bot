@@ -1,4 +1,4 @@
-// бот поиска работы: Хабр Карьера и Telegram как источники, письма только из утверждённых фраз, подборка и кнопки бота.
+// job search bot: Habr Career and Telegram as sources, letters only from approved phrases, the digest and the bot buttons.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -36,7 +36,7 @@ const tgHtml =
   '<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="ai_rabota/1296">' +
   '<div class="tgme_widget_message_text js-message_text" dir="auto">Розыгрыш подписки на нейросети!</div></div></div>';
 
-test('секретарь: Хабр Карьера — название, компания, зарплата, удалёнка, дата', () => {
+test('secretary: Habr Career, title, company, pay, remote work, date', () => {
   const list = parseHabrRss(habrXml);
   assert.equal(list.length, 2);
   assert.deepEqual(
@@ -63,7 +63,7 @@ test('секретарь: Хабр Карьера — название, комп
   assert.equal(scoreVacancy(list[1], { today }).excluded, 'не удалёнка');
 });
 
-test('секретарь: Telegram — пост-вакансия разобран, реклама пропущена', () => {
+test('secretary: Telegram, a vacancy post is parsed, the ad is skipped', () => {
   const list = parseTelegramPage(tgHtml, 'ai_rabota');
   assert.equal(list.length, 1);
   assert.equal(list[0].id, 'tg-ai_rabota-1295');
@@ -77,7 +77,7 @@ test('секретарь: Telegram — пост-вакансия разобра�
   assert.ok(s.score >= 55, String(s.score));
 });
 
-test('П2: 23 канала — 7 + 8 новых от 06.11, ни одного мёртвого и без повторов; живость по дате последнего поста', () => {
+test('P2: 23 channels: 7 + 8 new as of 06.11, none dead and no duplicates; liveness by the date of the last post', () => {
   const lower = TELEGRAM_CHANNELS.map((c) => c.toLowerCase());
   assert.equal(TELEGRAM_CHANNELS.length, 23);
   assert.equal(new Set(lower).size, 23);
@@ -96,11 +96,11 @@ test('П2: 23 канала — 7 + 8 новых от 06.11, ни одного м
   assert.deepEqual(channelState(tgHtml, Date.parse('2026-11-06T00:00:00Z')), { last: '2026-11-04T10:20:08.000Z', stale: false });
   assert.equal(channelState(tgHtml, Date.parse('2026-11-25T00:00:00Z')).stale, true, 'молчит больше 14 дней');
   assert.deepEqual(channelState('<html></html>'), { last: null, stale: true });
-  // ник канала в посте — не контакт работодателя, регистр не важен
+  // a channel handle in a post is not the employer's contact; case does not matter
   assert.deepEqual(contactsOf('Подписывайтесь @notificajobs_ai_machinelearning, пишите @hr_alpha').telegram, ['hr_alpha']);
 });
 
-test('П2: пост англоязычного канала — вакансия разобрана, письмо по-английски', () => {
+test('P2: a post from an English-language channel: the vacancy is parsed, the letter is in English', () => {
   const html =
     '<div class="tgme_widget_message_wrap"><div class="tgme_widget_message" data-post="remote_ai_jobs/77">' +
     '<div class="tgme_widget_message_text" dir="auto">AI Engineer (LLM agents)<br/>We are looking for an engineer. Remote.<br/>Apply: @hr_beta</div>' +
@@ -115,26 +115,26 @@ test('П2: пост англоязычного канала — вакансия
   assert.equal(composeLetter(parseTelegramPage(tgHtml, 'ai_rabota')[0]).lang, undefined, 'русский пост — русское письмо');
 });
 
-test('секретарь: название поста — «Должность: …», без эмодзи и строк-меток', () => {
+test('secretary: the post title is "Должность: …", without emoji and label lines', () => {
   assert.equal(titleOf('🏢 Место работы: OOO Ромашка\n💻 AI-инженер · Middle\nФормат: удалённо'), 'AI-инженер · Middle');
   assert.equal(titleOf('#вакансия\nДолжность: Руководитель ИИ-направления\nЗарплата: 500к'), 'Руководитель ИИ-направления');
 });
 
-test('секретарь: зарплата из текста и дата', () => {
+test('secretary: pay from the text and the date', () => {
   assert.equal(salaryFromText('Вилка $5 000–7 000 в месяц'), 'от 5 000 до 7 000 $');
   assert.equal(salaryFromText('до 300 000 руб.'), 'до 300 000 ₽');
   assert.equal(salaryFromText('без цифр'), 'не указан');
   assert.equal(ddmmyyyy('Mon, 02 Nov 2026 15:27:14 +0300'), '02.11.2026');
 });
 
-test('секретарь: ссылки — только hh, Хабр Карьера и посты Telegram', () => {
+test('secretary: links are only hh, Habr Career and Telegram posts', () => {
   assert.ok(safeUrl('https://career.habr.com/vacancies/1'));
   assert.ok(safeUrl('https://t.me/ai_rabota/1295'));
   assert.equal(safeUrl('https://t.me/ai_rabota/1295?x=javascript:'), '');
   assert.equal(safeUrl('https://career.habr.com.evil.io/vacancies/1'), '');
 });
 
-test('секретарь: письмо — 4 строки: приветствие, фраза под вакансию, проекты со ссылкой, «пишите»', () => {
+test('secretary: letter of 4 lines: greeting, a phrase for the vacancy, projects with a link, "write"', () => {
   const v = { id: '1', title: 'Tech Lead платформы ИИ-агентов', risks: [] };
   assert.equal(themeOf(v).id, 'agents');
   const l = composeLetter(v);
@@ -148,7 +148,7 @@ test('секретарь: письмо — 4 строки: приветстви�
   assert.equal(l.v, LETTER_VERSION);
   assert.deepEqual(checkLetter(l.text, v.title), { ok: true, unknown: [] });
   assert.deepEqual(checkLetter(`${l.text} 12 агентов, 252 задачи`, v.title), { ok: false, unknown: ['12', '252'] });
-  // у каждой темы фраза под вакансию разная, и письмо проходит проверку
+  // each topic has its own phrase for the vacancy, and the letter passes the check
   const titles = ['Head of AI', 'Мультиагентная платформа', 'Внедрение ИИ', 'AI Product Manager', 'Инженер'];
   const hooks = new Set(titles.map((t) => composeLetter({ title: t }).text.split('\n')[1]));
   assert.equal(hooks.size, titles.length);
@@ -157,11 +157,11 @@ test('секретарь: письмо — 4 строки: приветстви�
   assert.equal(resumeFor({ title: 'AI Engineer', risks: ['нужен английский'] }), 'RESUME-EN.md');
 });
 
-test('секретарь: название вакансии в письме очищено от разметки и ссылок', () => {
+test('secretary: the vacancy title in the letter is cleaned of markup and links', () => {
   assert.equal(cleanTitle('AI <b>lead</b> `x` https://evil.io «Q»'), 'AI b lead /b x Q');
 });
 
-test('секретарь: подборка — только новое выше порога, письма, кнопки бота; нажатия разбираются', () => {
+test('secretary: digest contains only new items above the threshold, letters, bot buttons; presses are parsed', () => {
   const list = [
     {
       id: '1',
@@ -216,14 +216,14 @@ test('секретарь: подборка — только новое выше 
     ['job:done:1', 'job:skip:1', 'job:no:1'],
   );
   assert.match(msgs[1].text, /^<pre>Здравствуйте!/);
-  // «авто»: без кнопок статуса — «Открыть вакансию» и «Скопировать текст»
+  // "auto": no status buttons; "Open the vacancy" and "Copy text" remain
   assert.equal(telegramMessages(ok, { mode: 'auto' })[0].reply_markup.inline_keyboard.length, 2);
   assert.deepEqual(parseJobCallback('job:no:tg-ai_rabota-1295'), { action: 'no', id: 'tg-ai_rabota-1295' });
   assert.equal(parseJobCallback('imp:123'), null);
   assert.match(renderDigest({ date: '2026-11-05', items: ok, mode: 'one-button', total: 3 }), /одна кнопка/);
 });
 
-test('секретарь: HTML в названии вакансии экранирован в сообщении бота', () => {
+test('secretary: HTML in the vacancy title is escaped in the bot message', () => {
   const v = {
     id: '9',
     url: 'https://hh.ru/vacancy/9',
@@ -240,7 +240,7 @@ test('секретарь: HTML в названии вакансии экрани
   assert.match(card.text, /A&amp;B/);
 });
 
-test('проверка письма: длинное, без ссылки на сайт, с самовосхвалением — не проходит; слово в названии вакансии не мешает', () => {
+test('letter check: a long letter, without a site link, with self-praise, does not pass; a word in the vacancy title does not interfere', () => {
   const title = 'AI Expert';
   const l = composeLetter({ title });
   assert.equal(checkLetter(l.text, title).ok, true, '«Expert» в названии вакансии — не самовосхваление');
@@ -250,7 +250,7 @@ test('проверка письма: длинное, без ссылки на с
   const brag = l.text.replace('Мои проекты', 'Я опытный разработчик. Мои проекты');
   assert.deepEqual(checkLetter(brag, title).problems, ['лишнее: «опытн»']);
   assert.match(checkLetter(`${l.text} ${'а'.repeat(400)}`, title).problems.join(), /длиннее 400/);
-  // письмо старого шаблона в базе пересобирается
+  // an old-template letter in the database is rebuilt
   assert.equal(letterStale({ text: 'длинное письмо' }), true);
   assert.equal(letterStale(l), false);
 });

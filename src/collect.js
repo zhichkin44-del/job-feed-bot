@@ -1,5 +1,5 @@
-// Сбор вакансий из всех открытых источников: hh.ru / hh.kz (RSS + страницы лучших), Хабр Карьера (RSS), Telegram (веб-превью).
-// Общий сборщик для radar.js. Ничего не отправляет и никуда не входит.
+// Collects vacancies from all open sources: hh.ru / hh.kz (RSS + pages of the best ones), Habr Career (RSS), Telegram (web previews).
+// Common collector for radar.js. Sends nothing and logs in nowhere.
 import { SITES, QUERIES, MIN_RUB, TARGET_RUB } from './profile.js';
 import { parseRss, parseVacancyPage, scoreVacancy } from './lib.js';
 import {
@@ -27,9 +27,9 @@ import {
 
 export const UA = 'job-feed-bot/0.1 (personal job search; open feeds only)';
 /**
- * hh выключен (проверено 06.11.2026): robots.txt hh — «Disallow: *?*» (лента /search/vacancy/rss?…), соглашение
- * hh.ru/article/28949 запрещает «программы парсинга». Законные пути: официальный API с токеном приложения (кандидат
- * регистрирует на dev.hh.ru) и подборки «автопоиска» hh, которые приходят кандидату на почту. До них hh = false.
+ * hh is off (checked 06.11.2026): hh robots.txt has "Disallow: *?*" (the feed /search/vacancy/rss?…), and the agreement
+ * hh.ru/article/28949 prohibits "parsing programs". Legal paths: the official API with the app token (the candidate
+ * registers at dev.hh.ru) and the hh "auto-search" digests that come to the candidate's email. Until then hh = false.
  */
 export const COLLECT_DEFAULTS = {
   details: 40,
@@ -51,7 +51,7 @@ async function getOnce(url, fetchImpl) {
 }
 
 /**
- * Запрос с одним повтором после паузы — только при сетевом сбое или таймауте (ответ 4xx не повторяем).
+ * One retry after a pause, only on a network failure or a timeout (4xx responses are not retried).
  * @param {string} url
  * @param {{ fetchImpl?: Function, pause?: number }} [opts]
  */
@@ -80,13 +80,13 @@ export function rssUrl(site, text, { salary = null } = {}) {
   return `https://${site.host}/search/vacancy/rss?${p}`;
 }
 
-/** Текст из ленты (Хабр, Telegram) как «страница вакансии» — для проверки рисков (английский, офис, стаж). */
+/** Text from the feed (Habr, Telegram) as a "vacancy page", for the risk check (English, office, experience). */
 export function textDetails(v) {
   return v.text ? { ok: true, description: v.text, workFormat: v.remote ? 'удалённо' : '', skills: [], experience: '' } : null;
 }
 
 /**
- * Полный сбор. Возвращает { date, all, counts500, errors, note, sites }; `all` — оценённые вакансии (и отброшенные, с причиной).
+ * Full collection. Returns { date, all, counts500, errors, note, sites }; `all` — scored vacancies (and discarded ones, with a reason).
  * @param {Partial<typeof COLLECT_DEFAULTS> & { fetchImpl?: Function, now?: Date, log?: (s: string) => void, pause?: number }} [opts]
  */
 export async function collect(opts = {}) {
@@ -95,11 +95,11 @@ export async function collect(opts = {}) {
   const date = today.toISOString().slice(0, 10);
   const net = { fetchImpl: o.fetchImpl || globalThis.fetch, pause: o.pause ?? 5000 };
   const log = o.log || (() => {});
-  // hh — только с явным hh: true (см. COLLECT_DEFAULTS): ни лент, ни страниц вакансий
+  // hh only with an explicit hh: true (see COLLECT_DEFAULTS): neither feeds nor vacancy pages
   const sites = o.hh ? SITES.filter((s) => o.sites.includes(s.id)) : [];
   const byId = new Map();
   const errors = [];
-  /** Telegram-каналы, где нет поста дольше TELEGRAM_STALE_DAYS (или превью без постов): кандидаты на замену. */
+  /** Telegram channels with no post for longer than TELEGRAM_STALE_DAYS (or previews without posts): candidates for replacement. */
   const stale = [];
   const counts500 = [];
 
@@ -113,12 +113,12 @@ export async function collect(opts = {}) {
   const jobs = [];
   for (const site of sites) {
     for (const q of QUERIES) {
-      // «все регионы» нужны только ради зарубежных компаний с хорошей вилкой — без фильтра там шум
-      // вилка — не фильтр: в своих регионах берём всё, и без зарплаты, и с вилкой ниже цели
+      // "All regions" is needed only for foreign companies with a good pay range; without the filter there is noise there
+      // the pay range is not a filter: in our own regions we take everything, with or without pay, and with a range below the target
       if (site.id !== 'any') jobs.push({ site, url: rssUrl(site, q) });
       else jobs.push({ site, url: rssUrl(site, q, { salary: MIN_RUB }) });
     }
-    // счётчик 500+: без «нейросет*» — со звёздочкой лента hh отдаёт много лишнего
+    // 500+ counter: without "нейросет*" (with the asterisk the hh feed returns a lot of extra results)
     jobs.push({
       site,
       url: rssUrl(site, 'ИИ OR AI OR LLM OR GenAI', { salary: TARGET_RUB }),
@@ -127,7 +127,7 @@ export async function collect(opts = {}) {
   }
   if (o.habr) for (const q of HABR_QUERIES) jobs.push({ kind: 'habr', url: habrUrl(q) });
   if (o.telegram) for (const c of TELEGRAM_CHANNELS) jobs.push({ kind: 'telegram', channel: c, url: telegramUrl(c) });
-  // английский рынок (sources-en.js): официальные ленты, ветка HN ищется по свежему «Who is hiring»
+  // English market (sources-en.js): official feeds; the HN branch is found by the fresh "Who is hiring" thread
   if (o.en) {
     jobs.push({ kind: 'hn', url: EN_FEEDS.hnSearch });
     jobs.push({ kind: 'remoteok', url: EN_FEEDS.remoteok });
@@ -180,7 +180,7 @@ export async function collect(opts = {}) {
   }
 
   let all = [...byId.values()].map((v) => ({ ...v, contacts: contactsOf(v.text), ...scoreVacancy(v, { today, details: textDetails(v) }) }));
-  // страницы читаем только у hh: у Хабра и Telegram текст уже есть в ленте
+  // pages are read only for hh: Habr and Telegram already have the text in the feed
   const candidates = all
     .filter((v) => o.hh && !v.excluded && (v.site === 'ru' || v.site === 'kz'))
     .sort((a, b) => b.score - a.score)

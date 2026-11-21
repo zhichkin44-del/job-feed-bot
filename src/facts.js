@@ -1,20 +1,20 @@
-// ШАБЛОН ПРОФИЛЯ КАНДИДАТА. Замените значения на свои проверенные факты.
+// CANDIDATE PROFILE TEMPLATE. Replace the values with your own verified facts.
 //
-// Правило: письмо собирается только из фраз этого файла и названия вакансии. Цифра, которой нет в этих фразах,
-// не проходит проверку checkLetter() (src/letters.js) — так модель или шаблон не могут «придумать» опыт.
-// Новую цифру добавляет человек, сверив её с источником. Здесь цифр нет намеренно.
+// Rule: a letter is assembled only from the phrases of this file and the vacancy title. A figure that is not in these phrases
+// does not pass checkLetter() (src/letters.js), so neither the model nor a template can "invent" experience.
+// A person adds a new figure after checking it against the source. There are no figures here on purpose.
 
-/** Сайт или портфолио кандидата: ссылка попадает в каждое письмо. Адрес можно задать переменной JOB_BOT_SITE. */
+/** The candidate's site or portfolio: the link goes into every letter. The address can be set with the JOB_BOT_SITE variable. */
 export const SITE = (process.env.JOB_BOT_SITE || 'https://example.com').replace(/\/+$/, '');
 export const SITE_EN = `${SITE}/en/`;
 export const SIGNATURE = '[Имя Фамилия] · Telegram: [Telegram] · [почта]';
 export const SIGNATURE_EN = '[Name Surname] · Telegram: [Telegram] · [email]';
 
-/** Подсказка в первой карточке подборки: где один раз завести аккаунт на площадках. */
+/** A hint in the first card of the digest: where to create an account on the platforms, once. */
 export const ACCOUNTS_HINT =
   'Чтобы откликаться на hh.ru и Хабр Карьере, нужен аккаунт: hh.ru → «Войти» → «Зарегистрироваться»; career.habr.com → «Войти». Один раз.';
 
-/** Проекты кандидата: одна-две фразы и ссылка на страницу проекта. Только проверенные факты. */
+/** The candidate's projects: one or two phrases and a link to the project page. Only verified facts. */
 export const PROJECTS = {
   agents: {
     name: '[Проект про ИИ-агентов]',
@@ -33,21 +33,21 @@ export const PROJECTS_EN = {
   bots: { name: '[Telegram bot project]', url: `${SITE_EN}projects/bots/`, text: '[One or two sentences about the bot or integration.]' },
 };
 
-/** Как кандидат работает — одна проверенная фраза. */
+/** How the candidate works: one verified phrase. */
 export const HOW = '[Как вы работаете: например, кто что делает в проекте и за что отвечаете.]';
 export const HOW_EN = '[How you work: who does what in a project and what you are responsible for.]';
 
-/** Язык общения (для английских вакансий): честная формулировка без выдумок про уровень. */
+/** Language of communication (for English vacancies): an honest wording without invented claims about the level. */
 export const LANG_EN = '[How you communicate in English: in writing, on calls, with a translator.]';
 
-/** Короткий текст от первого лица для кнопки «Скопировать текст» (не длиннее 256 знаков — предел copy_text Telegram). */
+/** A short first-person text for the "Copy text" button (no longer than 256 characters: the Telegram copy_text limit). */
 export const PITCH_EN = {
   head: 'Hi! About your «{title}» role.',
   body: 'I build with AI. Portfolio: {site}',
   max: 256,
 };
 
-/** Темы вакансий → первая фраза письма и какие проекты показать. Порядок важен: первая совпавшая. */
+/** Vacancy topics → the first phrase of the letter and which projects to show. Order matters: the first match wins. */
 export const THEMES = [
   {
     id: 'agents',
@@ -96,10 +96,10 @@ export const DEFAULT_THEME = {
   resume: 'RESUME-AI-ENGINEER.md',
 };
 
-/** Версия шаблона: письмо со старой версией пересобирается перед подборкой. */
+/** Template version: a letter with an old version is rebuilt before the digest. */
 export const LETTER_VERSION = 1;
 
-/** Короткое письмо: приветствие → одна фраза под вакансию → ссылка на проекты → условия. */
+/** A short letter: greeting → one phrase for the vacancy → a link to the projects → terms. */
 export const SHORT = {
   head: 'Здравствуйте! По вакансии «{title}».',
   headBare: 'Здравствуйте! По вашей вакансии.',
@@ -117,8 +117,8 @@ export const SHORT_EN = {
 };
 
 /**
- * Варианты писем. Места подстановки: {title} {hook} {site} {salary}. Это стартовый набор, его можно менять и
- * дополнять: проверка писем читает цифры из шаблонов и сумм.
+ * Letter variants. Placeholders: {title} {hook} {site} {salary}. This is a starter set; it can be changed and
+ * extended: the letter check reads the figures from the templates and the amounts.
  */
 export const SEED_VARIANTS = [
   {
@@ -137,11 +137,11 @@ export const SEED_VARIANTS = [
   },
 ];
 
-/** Суммы в письмах — отдельная переменная; пустой список = сумма из варианта. */
+/** Amounts in the letters: a separate variable; an empty list means the amount from the variant. */
 export const SEED_SALARIES = [];
 
-/** Строк в письме (непустых): 2–4. */
+/** Lines in the letter (non-empty): 2–4. */
 export const LETTER_LINES = { min: 2, max: 4 };
 
-/** Чего не бывает в письме: самовосхваление. Дополните список своими запретными формулировками. */
+/** What does not belong in a letter: self-praise. Extend the list with your own forbidden wordings. */
 export const BANNED = /(опытн|многолетн|эксперт|профессионал|experienced|years of experience|expert|seasoned|passionate)/i;

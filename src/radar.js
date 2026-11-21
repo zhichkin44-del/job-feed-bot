@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// Радар вакансий для владельца: ИИ-роли, удалёнка, РФ и Казахстан, зарплата от 300 тыс. ₽ или не указана.
-// Источники — collect.js: hh.ru / hh.kz (RSS; публичный API /vacancies с апреля 2026 отвечает 403 без авторизации), Хабр Карьера, Telegram.
-// Ничего не отправляет и никуда не входит: только читает открытые ленты и (по желанию) страницы лучших вакансий.
+// Vacancy radar for the owner: AI roles, remote work, Russia and Kazakhstan, pay from 300k ₽ or not stated.
+// Sources are in collect.js: hh.ru / hh.kz (RSS; the public /vacancies API has answered 403 without authorization since April 2026), Habr Career, Telegram.
+// Sends nothing and logs in nowhere: it only reads the open feeds and (optionally) the pages of the best vacancies.
 //
-//   node src/radar.js                 — полный прогон, отчёт в data/<дата>.md и .json
-//   node src/radar.js --details 0     — без чтения страниц вакансий (быстрее, оценка грубее)
+//   node src/radar.js                 — full run, report in data/<date>.md and .json
+//   node src/radar.js --details 0     — without reading the vacancy pages (faster, rougher score)
 //   node src/radar.js --top 30 --delay 2000 --sites ru,kz
-//   node src/radar.js --rescore data/2026-11-04.json — пересчитать оценки без сети
-//   node src/radar.js --digest        — плюс подборка бота с письмами и сообщениями бота (в файлы, без отправки)
-//   флаги: --no-habr, --no-telegram, --no-seen (не запоминать показанное), --mode one-button|auto
+//   node src/radar.js --rescore data/2026-11-04.json — re-score without network
+//   node src/radar.js --digest        — plus the bot digest with letters and bot messages (to files, without sending)
+//   flags: --no-habr, --no-telegram, --no-seen (do not remember what was shown), --mode one-button|auto
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,7 +57,7 @@ async function main(o) {
   finish({ o, ...r });
 }
 
-/** Пересчёт оценок по сохранённому прогону — без сети (после правки profile.js). */
+/** Re-scoring of saved results, without network (after editing profile.js). */
 function rescore(o) {
   const data = JSON.parse(readFileSync(o.rescore, 'utf8'));
   const today = new Date(`${data.date}T12:00:00Z`);
@@ -112,7 +112,7 @@ const readJson = (file, fallback) => {
   }
 };
 
-/** Подборка бота: новое выше порога → письма → файл подборки и сообщения бота. Ничего не отправляет. */
+/** Bot digest: new above the threshold → letters → the digest file and the bot messages. Sends nothing. */
 function secretary({ o, date, kept }) {
   const cfg = { ...DEFAULTS, ...readJson(join(o.out, 'secretary.json'), {}), ...(o.mode ? { mode: o.mode } : {}) };
   const seenFile = join(o.out, 'seen.json');

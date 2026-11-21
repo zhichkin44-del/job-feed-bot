@@ -1,26 +1,26 @@
-// Радар вакансий: чистые функции без сети — разбор RSS и страниц hh, зарплаты, оценка под профиль, отчёт.
-// Всё, что пришло с hh, — недоверенные данные: в отчёте экранируется, как команды не исполняется.
+// Vacancy radar: pure functions without network: parsing of RSS and hh pages, pay, scoring for the profile, report.
+// Everything that came from hh is untrusted data: it is escaped in the report and never executed as commands.
 import { RATES, TARGET_RUB, ROLES, EXCLUDE, ML_HEAVY, STACK, RISKS, AI_RE } from './profile.js';
 import { classify } from './geo.js';
 
-/** Баллы за вилку — одинаковые при любой вилке и без неё. */
+/** Points for the pay range: the same for any range and for none. */
 export const SALARY_POINTS = 30;
 
-/** Английский рынок (sources-en.js): оплата в долларах в месяц. $3000 — бывшая нижняя граница; с 06.11 вилка не фильтр. */
+/** English market (sources-en.js): pay in dollars per month. $3000 was the former lower bound; since 06.11 the range is not a filter. */
 export const EN_SITES = new Set(['hn', 'remoteok', 'wwr', 'cryptojobs', 'himalayas', 'remotive']);
-/** Плюс за асинхронную или письменную работу: письма и разговоры идут через переводчика. */
+/** A plus for asynchronous or written work: letters and conversations go through a translator. */
 export const ASYNC_POINTS = 8;
-/** Минус за «нужен разговорный английский» у английской вакансии: помечаем и понижаем, не отсекаем (у русских есть свой штраф в RISKS). */
+/** A minus for "spoken English needed" in an English vacancy: flagged and lowered, not cut (Russian ones have their own penalty in RISKS). */
 export const SPOKEN_EN_PENALTY = 10;
 export const EN_MIN_USD = 3000;
 const EN_STRONG_AI = /\b(llms?|ai agents?|agentic|multi-?agent|genai|generative ai|rag|langchain|langgraph|openai|anthropic|claude|mcp)\b/i;
-/** Удалёнка только для своего региона — для кандидата из другой страны не подходит (штраф и риск, не отсев: бывают исключения). */
+/** Remote only for its own region: not suitable for a candidate from another country (a penalty and a risk, not a rejection: there are exceptions). */
 const EN_REGION_ONLY =
   /\b(latam|latin america|us[- ]only|usa only|u\.s\. only|us[- ]based|must (?:be )?(?:located|based|reside) in|eu[- ]only|north america only|within the us|canada only|uk only)\b/i;
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', laquo: '«', raquo: '»', mdash: '—', ndash: '–' };
 
-/** HTML-сущности → символы. */
+/** HTML entities → characters. */
 export function decode(s) {
   return String(s ?? '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
     if (e[0] === '#') {
@@ -31,7 +31,7 @@ export function decode(s) {
   });
 }
 
-/** Теги → пробелы, сущности → символы, пробелы схлопнуты (в JS `\s` включает и неразрывные пробелы hh). */
+/** Tags → spaces, entities → characters, spaces collapsed (in JS `\s` also includes the non-breaking spaces of hh). */
 export function stripTags(html) {
   return decode(
     String(html ?? '')
@@ -50,7 +50,7 @@ function tag(xml, name) {
   return m[1].replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/, '$1').trim();
 }
 
-/** Разбор RSS поиска hh: список вакансий с компанией, датой, регионом и текстом зарплаты. */
+/** Parsing of the hh search RSS: a list of vacancies with company, date, region and pay text. */
 export function parseRss(xml, site = 'ru') {
   const out = [];
   for (const m of String(xml ?? '').matchAll(/<item>([\s\S]*?)<\/item>/g)) {
@@ -97,7 +97,7 @@ export function parseSalary(text) {
   return { from: from ?? plain, to: to ?? plain, currency };
 }
 
-/** Зарплата в рублях: { from, to } (что известно). */
+/** Pay in rubles: { from, to } (what is known). */
 export function toRub(salary) {
   if (!salary) return null;
   const k = RATES[salary.currency] ?? 1;
@@ -105,13 +105,13 @@ export function toRub(salary) {
   return { from: r(salary.from), to: r(salary.to) };
 }
 
-/** Верх вилки в рублях (или низ, если верха нет). */
+/** The upper end of the range in rubles (or the lower one if there is no upper end). */
 export function topRub(salary) {
   const r = toRub(salary);
   return r ? (r.to ?? r.from) : null;
 }
 
-/** «02.11.2026» → дней до `today`. */
+/** "02.11.2026" → days until `today`. */
 export function ageDays(created, today) {
   const m = String(created ?? '').match(/(\d{2})\.(\d{2})\.(\d{4})/);
   if (!m) return null;
@@ -120,7 +120,7 @@ export function ageDays(created, today) {
   return Math.round((t - d) / 86_400_000);
 }
 
-/** Текст страницы вакансии: описание, опыт, формат работы, навыки. */
+/** Text of the vacancy page: description, experience, work format, skills. */
 export function parseVacancyPage(html) {
   const s = String(html ?? '');
   const after = (qa, len = 800) => {
@@ -150,8 +150,8 @@ export function parseVacancyPage(html) {
 }
 
 /**
- * Оценка вакансии под профиль владельца, 0–100.
- * Возвращает { score, excluded, why[], risks[], stack[] }. `details` — разбор страницы (может не быть).
+ * Scoring of the vacancy for the owner's profile, 0–100.
+ * Returns { score, excluded, why[], risks[], stack[] }. `details` is the page breakdown (may be absent).
  */
 export function scoreVacancy(v, { today = new Date(), details = null } = {}) {
   const title = v.title ?? '';
@@ -163,19 +163,19 @@ export function scoreVacancy(v, { today = new Date(), details = null } = {}) {
     if (ex.re.test(title) && !(ex.unless && ex.unless.test(title))) return { score: 0, excluded: ex.why, why, risks, stack: [] };
   }
   const en = EN_SITES.has(v.site);
-  // У hh удалёнка — фильтр запроса; у Хабра, Telegram и английских лент её видно только из текста
+  // At hh remote work is a query filter; at Habr, Telegram and the English feeds it is visible only from the text
   if ((v.site === 'habr' || v.site === 'telegram' || en) && !v.remote) return { score: 0, excluded: 'не удалёнка', why, risks, stack: [] };
-  // У поста в Telegram и комментария HN заголовок угадан по тексту — ИИ ищем и в самом тексте
-  // в английских лентах «AI» встречается в тегах почти у всех — из текста засчитываем только сильные признаки
+  // For a Telegram post and an HN comment the title is guessed from the text: we look for AI in the text itself
+  // in the English feeds "AI" appears in tags almost everywhere, so from the text we count only strong signs
   const textAi = v.site === 'telegram' ? AI_RE.test(v.text ?? '') : en && EN_STRONG_AI.test(v.text ?? '');
   const hasAi = AI_RE.test(title) || textAi;
   if (!hasAi) return { score: 0, excluded: 'нет ИИ в названии', why, risks, stack: [] };
 
-  // Вилка — не фильтр и не минус: вакансия берётся, если подходит роль. Вилку только показываем.
+  // The pay range is not a filter and not a minus: the vacancy is taken if the role fits. We only show the range.
   const top = en ? (v.usd ? Math.round(v.usd.to * RATES.USD) : null) : topRub(parseSalary(v.salaryText));
 
   let score = 0;
-  // «ИИ-роль» засчитывается по названию: «Senior Backend Engineer», где ИИ только в тексте, — не ИИ-инженер
+  // "AI role" is counted by the title: "Senior Backend Engineer", where AI is only in the text, is not an AI engineer
   const titleAi = AI_RE.test(title);
   const role = ROLES.find((r) => r.re.test(title) && (!r.needAi || titleAi));
   if (role) {
@@ -183,9 +183,9 @@ export function scoreVacancy(v, { today = new Date(), details = null } = {}) {
     why.push(role.why);
   }
 
-  // одинаковые баллы при любой вилке — отбор решает роль, а не цифра работодателя
+  // identical points for any range: the role decides the selection, not the employer's figure
   score += SALARY_POINTS;
-  // сумму в письме выбирает тест сумм (300 / 600 тыс. ₽, $3,000 / $7,000), вилка работодателя её не задаёт
+  // the amount in the letter is chosen by the amounts test (300 / 600 thousand ₽, $3,000 / $7,000); the employer's range does not set it
   if (top == null) why.push('вилка не указана — сумма из теста');
   else if (top >= TARGET_RUB) why.push(`вилка до ${fmtRub(top)} — в цели`);
   else why.push(`вилка до ${fmtRub(top)} — сумма из теста`);
@@ -201,7 +201,7 @@ export function scoreVacancy(v, { today = new Date(), details = null } = {}) {
 
   if (details?.ok) {
     for (const r of RISKS) {
-      // английский рынок: язык — не риск, а условие; считается, что кандидат общается письменно или через перевод
+      // English market: the language is not a risk but a condition; it is assumed that the candidate communicates in writing or through a translator
       if (en && r.why === 'нужен английский') continue;
       if (r.re.test(details.description) || (r.why.includes('офис') && /офис|гибрид|hybrid/i.test(details.workFormat ?? ''))) {
         score += r.points;
@@ -216,7 +216,7 @@ export function scoreVacancy(v, { today = new Date(), details = null } = {}) {
     score -= 10;
     risks.push('ИИ только в тексте вакансии');
   }
-  // «Senior AI Engineer - US» / «(EU)» в конце названия — тоже удалёнка только для региона
+  // "Senior AI Engineer - US" / "(EU)" at the end of the title is also remote only for a region
   const titleRegion = /[-–(]\s*(us|usa|eu|uk|canada|latam|emea|americas)\s*\)?\s*$/i.test(title);
   if (en && (titleRegion || EN_REGION_ONLY.test(`${title} ${v.region ?? ''} ${String(v.text ?? '').slice(0, 1500)}`))) {
     score -= 15;
@@ -228,7 +228,7 @@ export function scoreVacancy(v, { today = new Date(), details = null } = {}) {
   if (age != null) score += age <= 3 ? 10 : age <= 7 ? 7 : age <= 14 ? 4 : 0;
 
   if (v.site === 'kz') why.push('Казахстан');
-  // язык и регион (geo.js): письменный английский и живой перевод — подходит; разговорный — помечаем; асинхронная работа — плюс
+  // language and region (geo.js): written English and live translation fit; spoken is flagged; asynchronous work is a plus
   const cls = classify({ ...v, description: details?.description ?? v.description });
   if (cls.async) {
     score += ASYNC_POINTS;
@@ -247,7 +247,7 @@ export function fmtRub(n) {
   return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.', ',')} млн ₽` : `${Math.round(n / 1000)} тыс. ₽`;
 }
 
-/** Экранирование недоверенного текста для ячейки markdown-таблицы. */
+/** Escaping of untrusted text for a markdown table cell. */
 export function mdCell(s, max = 160) {
   let t = String(s ?? '')
     .replace(/[\r\n]+/g, ' ')
@@ -257,7 +257,7 @@ export function mdCell(s, max = 160) {
   return t;
 }
 
-/** Ссылка только на вакансию hh — иначе пусто. */
+/** A link only to the hh vacancy; otherwise empty. */
 export function safeUrl(u) {
   const s = String(u);
   return /^https:\/\/hh\.(ru|kz)\/vacancy\/\d+$/.test(s) ||
@@ -273,7 +273,7 @@ export function safeUrl(u) {
     : '';
 }
 
-/** Одна вакансия, размещённая в нескольких городах, — одна строка (первая по порядку, т. е. с лучшей оценкой). */
+/** One vacancy posted in several cities is one line (the first in order, i.e. with the best score). */
 export function dedupe(list) {
   const seen = new Set();
   return list.filter((v) => {
@@ -287,7 +287,7 @@ export function dedupe(list) {
   });
 }
 
-/** Сводка по зарплатам из уже оценённых вакансий (уникальных). */
+/** Summary of pay from the already scored vacancies (unique ones). */
 export function salaryStats(list) {
   const withTop = list.map((v) => ({ top: topRub(parseSalary(v.salaryText)), from: toRub(parseSalary(v.salaryText))?.from }));
   return {
@@ -299,7 +299,7 @@ export function salaryStats(list) {
   };
 }
 
-/** Markdown-отчёт: топ, счётчики, отброшенное. */
+/** Markdown report: top, counters, discarded. */
 export function renderReport({ date, ranked, excludedCount, stats, fit, counts500, errors, sources }) {
   const lines = [];
   lines.push(`# Радар вакансий — ${date}`, '');

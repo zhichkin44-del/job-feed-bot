@@ -1,10 +1,10 @@
-// Дополнительные источники радара: Хабр Карьера (RSS) и открытые Telegram-каналы (веб-превью t.me/s/<канал>).
-// Только открытые данные, без входа. Всё, что пришло отсюда, — недоверенный текст: в отчёт идёт экранированным.
+// Extra radar sources: Habr Career (RSS) and open Telegram channels (web previews t.me/s/<channel>).
+// Only open data, no sign-in. Everything that comes from here is untrusted text: it goes into the report escaped.
 import { decode, stripTags } from './lib.js';
 
 /**
- * Каналы с вакансиями ИИ, у которых открыто веб-превью и был пост за последние 7 дней. Первые 8 — из CLAUDE-MARKET.md
- * (проверено 05.11.2026), остальные 7 — исследование 06.11.2026 (t.me/s/<канал> без входа, дата поста — атрибут datetime).
+ * Channels with AI vacancies that have an open web preview and a post in the last 7 days. The first 8 are from CLAUDE-MARKET.md
+ * (checked 05.11.2026); the other 7 are from research of 06.11.2026 (t.me/s/<channel> without sign-in; the post date is the datetime attribute).
  */
 export const TELEGRAM_CHANNELS = [
   'datasciencejobs',
@@ -15,7 +15,7 @@ export const TELEGRAM_CHANNELS = [
   'geekjobs',
   'remocate',
   'careerspace',
-  // 06.11: доля постов про ИИ за 7 дней — 83, 95, 100, 67, 57, 43 и 35 %
+  // 06.11: share of AI posts over 7 days: 83, 95, 100, 67, 57, 43 and 35 %
   'aivacancychannel',
   'notificaJobs_AI_MachineLearning', // EN
   'remote_ai_jobs', // EN
@@ -23,7 +23,7 @@ export const TELEGRAM_CHANNELS = [
   'opento_dev', // RU/EN
   'forchiefs',
   'habr_career',
-  // 06.11, второе исследование: живые (пост за 7 дней, превью открыто), вместе меньше 2 ИИ-постов в день
+  // 06.11, second research: alive (a post in 7 days, preview open), together fewer than 2 AI posts a day
   'jobfortm',
   'datascienceml_jobs',
   'ml_jobs_kz',
@@ -34,7 +34,7 @@ export const TELEGRAM_CHANNELS = [
   'love_it_hate',
 ];
 
-/** Проверены 06.11.2026 и не берутся — чтобы их не добавили снова. */
+/** Checked 06.11.2026 and not taken, so that they are not added again. */
 export const TELEGRAM_DEAD = {
   vakansii_ai: 'превью закрыто',
   rabota_programmisty_IT_II_gpt: 'превью закрыто',
@@ -48,24 +48,24 @@ export const TELEGRAM_DEAD = {
   evacuatejobs: 'тот же канал, что remocate',
 };
 
-/** Канал молчит дольше этого — пометка в отчёте сбора (живость проверяется каждый сбор). */
+/** A channel silent for longer than this gets a mark in the collection report (liveness is checked on every collection). */
 export const TELEGRAM_STALE_DAYS = 14;
 
-/** Дата самого свежего поста на странице превью канала (любого, не только вакансии) или null. */
+/** The date of the latest post on the channel's preview page (any post, not only vacancies), or null. */
 export function lastPostAt(html) {
   const dates = [...String(html ?? '').matchAll(/<time[^>]*datetime="([^"]+)"/g)].map((m) => Date.parse(m[1])).filter(Number.isFinite);
   return dates.length ? new Date(Math.max(...dates)).toISOString() : null;
 }
 
-/** Канал «молчит»: на превью нет постов или последний старше TELEGRAM_STALE_DAYS. Возвращает { last, stale }. */
+/** A channel is "silent" if the preview has no posts or the last one is older than TELEGRAM_STALE_DAYS. Returns { last, stale }. */
 export function channelState(html, now = Date.now()) {
   const last = lastPostAt(html);
   return { last, stale: !last || (now - Date.parse(last)) / 864e5 > TELEGRAM_STALE_DAYS };
 }
 
 /**
- * Контакты для отклика, если работодатель сам указал их в тексте вакансии: почта и Telegram.
- * Каналы-агрегаторы и служебные ссылки t.me (s/, joinchat, +инвайты) — не контакты.
+ * Contacts for applying, if the employer stated them in the vacancy text: email and Telegram.
+ * Aggregator channels and service t.me links (s/, joinchat, +invites) are not contacts.
  */
 export function contactsOf(text) {
   const t = String(text ?? '');
@@ -80,7 +80,7 @@ export function contactsOf(text) {
   return { emails: emails.slice(0, 3), telegram: telegram.slice(0, 3) };
 }
 
-/** Запросы к Хабр Карьере (поиск по тексту вакансии, только удалёнка). */
+/** Queries to Habr Career (search by vacancy text, remote only). */
 export const HABR_QUERIES = ['LLM', 'AI', 'ИИ', 'GenAI', 'нейросети', 'агент'];
 
 export const habrUrl = (q) => `https://career.habr.com/vacancies/rss?${new URLSearchParams({ q, remote: 'true', type: 'all' })}`;
@@ -91,7 +91,7 @@ const tag = (xml, name) => {
   return m ? m[1].replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/, '$1').trim() : '';
 };
 
-/** Дата → «дд.мм.гггг» (как у hh), чтобы оценка свежести работала одинаково. */
+/** Date → "dd.mm.yyyy" (as on hh), so that the freshness score works the same way. */
 export function ddmmyyyy(date) {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '';
@@ -99,7 +99,7 @@ export function ddmmyyyy(date) {
   return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
 }
 
-/** Зарплата из свободного текста: «От 250 000 ₽», «от 300 до 450 тыс. ₽», «$5000». Пусто — «не указан». */
+/** Pay from free text: "От 250 000 ₽", "от 300 до 450 тыс. ₽", "$5000". Empty gives "не указан". */
 export function salaryFromText(text) {
   const t = String(text ?? '').replace(/\s+/g, ' ');
   const m = t.match(
@@ -107,13 +107,13 @@ export function salaryFromText(text) {
   );
   if (!m) return 'не указан';
   let s = m[0].trim();
-  // «$5000–7000» → «от 5000 до 7000 $», чтобы разбирал parseSalary
+  // "$5000–7000" → "от 5000 до 7000 $", so that parseSalary parses it
   const usd = s.match(/^\$\s?([\d ]+\d)(?:\s*[-–]\s*\$?\s?([\d ]+\d))?$/);
   if (usd) s = usd[2] ? `от ${usd[1]} до ${usd[2]} $` : `от ${usd[1]} $`;
   return s.replace(/руб\.?/i, '₽');
 }
 
-/** RSS Хабр Карьеры → вакансии в формате радара. */
+/** Habr Career RSS → vacancies in the radar format. */
 export function parseHabrRss(xml) {
   const out = [];
   for (const m of String(xml ?? '').matchAll(/<item>([\s\S]*?)<\/item>/g)) {
@@ -141,13 +141,13 @@ export function parseHabrRss(xml) {
 
 const ROLE_WORD =
   /(engineer|инженер|developer|разработчик|lead|руковод|head|директор|архитект|architect|product|продакт|менеджер|manager|аналитик|специалист)/i;
-// Строки-метки поста: «Место работы: …», «Формат: …», «Зарплата: …» — не название вакансии
+// Label lines of the post: "Место работы: …", "Формат: …", "Зарплата: …" are not the vacancy title
 const LABEL =
   /^(место работы|workplace|компания|company|локация|location|город|формат|format|зарплата|salary|вилка|оклад|опыт|experience|график|занятость|контакт|связь|стек|stack)\b/i;
-// «Должность: X», «Вакансия: X», «Position: X» — название после двоеточия
+// "Должность: X", "Вакансия: X", "Position: X": the title after the colon
 const TITLE_LABEL = /^(должность|вакансия|позиция|position|role|роль)\s*[:—-]\s*(.+)$/i;
 
-/** Название вакансии из текста поста: явная «Должность: …», иначе первая строка с ролью, без эмодзи и меток. */
+/** Vacancy title from the post text: an explicit "Должность: …", otherwise the first line with a role, without emoji and labels. */
 export function titleOf(text) {
   const lines = String(text ?? '')
     .split('\n')
@@ -168,7 +168,7 @@ export function titleOf(text) {
 const VACANCY_HINT =
   /(ваканси|ищем|требуется|hiring|опыт работы|зарплат|вилка|оклад|формат работы|обязанности|требования|#job|#работа|we are looking|we're looking|job opening|position|apply|requirements|responsibilities|salary)/i;
 
-/** Веб-превью Telegram-канала → посты-вакансии (заголовок — первая содержательная строка). */
+/** Web preview of a Telegram channel → vacancy posts (the title is the first meaningful line). */
 export function parseTelegramPage(html, channel) {
   const s = String(html ?? '');
   const out = [];

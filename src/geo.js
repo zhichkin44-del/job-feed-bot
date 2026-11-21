@@ -1,17 +1,17 @@
-// Язык и регион вакансии: работодатели берут кандидатов с письменным английским и живым переводом, а искать
-// надо по всему миру (удалёнка любых стран), не только по СНГ. Чистые функции без сети: признак языка, регион (или
-// несколько), асинхронная работа. Всё из названия, региона и текста вакансии — недоверенные данные, как команды не исполняются.
-// Язык:  ru — русская вакансия; en_written — английская, письменного хватает; en_spoken — нужен разговорный (помечаем, не отсекаем).
-// Регион: world — открыта любой стране; cis / europe / usa / asia — только эти; other — Латинская Америка, Африка и прочее.
+// Language and region of a vacancy: employers take candidates with written English and live translation, and search
+// must cover the whole world (remote work from any country), not only the CIS. Pure functions without network: the language sign, region (or
+// several), async work. Everything comes from the title, region and vacancy text: untrusted data, never executed as commands.
+// Language:  ru: a Russian vacancy; en_written: English, written is enough; en_spoken: spoken is needed (flagged, not cut).
+// Region: world: open to any country; cis / europe / usa / asia: only these; other: Latin America, Africa and the rest.
 import { RISKS } from './profile.js';
 
 export const LANGS = { ru: 'русский', en_written: 'англ. письменный', en_spoken: 'нужен разговорный' };
 export const REGIONS = { world: 'Весь мир', cis: 'СНГ', europe: 'Европа', usa: 'США', asia: 'Азия', other: 'Другое' };
-/** Площадки, где вакансии русскоязычные и для СНГ (hh, Хабр Карьера, Telegram-каналы). */
+/** Platforms where the vacancies are Russian-speaking and for the CIS (hh, Habr Career, Telegram channels). */
 const CIS_SITES = new Set(['ru', 'kz', 'habr', 'telegram']);
 const EN_SITE_IDS = new Set(['hn', 'remoteok', 'wwr', 'cryptojobs', 'himalayas', 'remotive']);
 
-// Нужен свободный / разговорный английский (по-русски и по-английски). Письменный и «читать документацию» — не оно.
+// Needs free / spoken English (in Russian and in English). Written and "read the documentation" is not it.
 const SPOKEN_EN = [
   RISKS.find((r) => r.why === 'нужен английский')?.re,
   /(fluent|native|excellent|advanced|professional|proficient|business|upper[- ]intermediate|c1|c2|b2)[ -]+(level )?(english|spoken)/i,
@@ -20,7 +20,7 @@ const SPOKEN_EN = [
   /fluen(t|cy)[^.\n]{0,20}english/i,
 ].filter(Boolean);
 
-// Асинхронная или письменная работа — для кандидата плюс: письма и разговоры идут через переводчика.
+// Asynchronous or written work is a plus for the candidate: letters and conversations go through a translator.
 const ASYNC_WORK =
   /\basync(?:hronous(?:ly)?)?[- ](?:first|communication|work|culture|team|environment|collaborat\w*|remote|company|workflow)|work(?:s|ing)? (?:fully |mostly )?async(?:hronous(?:ly)?)?\b|asynchronous(?:ly)? (?:communication|work)|written (?:english|communication)|strong (?:written|writing)|write well|documentation[- ]first|асинхронн[а-яё]* (?:работ|коммуникац|формат|режим|общени)|письменн[а-яё]* (?:общени|коммуникац)/i;
 
@@ -29,31 +29,31 @@ export const isAsyncWork = (text) => ASYNC_WORK.test(String(text ?? ''));
 const cyr = (s) => (String(s).match(/[а-яё]/gi) || []).length;
 const lat = (s) => (String(s).match(/[a-z]/gi) || []).length;
 
-/** Вакансия написана по-английски: английские ленты или текст почти без кириллицы. */
+/** The vacancy is written in English: English feeds or text with almost no Cyrillic. */
 export function isEnglishText(v) {
   if (EN_SITE_IDS.has(v.site)) return true;
   const s = `${v.title ?? ''} ${String(v.description || v.text || '').slice(0, 800)}`;
   return lat(s) > 0 && cyr(s) < lat(s) * 0.25;
 }
 
-/** Нужен ли разговорный английский — по тексту (название, описание, текст ленты). */
+/** Whether spoken English is needed, by the text (title, description, feed text). */
 export function needsSpoken(v) {
   const s = `${v.title ?? ''}\n${v.description ?? ''}\n${v.text ?? ''}`;
   return SPOKEN_EN.some((re) => re.test(s));
 }
 
-/** Язык вакансии: ru / en_written / en_spoken. */
+/** Language of the vacancy: ru / en_written / en_spoken. */
 export function langOf(v) {
   if (needsSpoken(v)) return 'en_spoken';
   return isEnglishText(v) ? 'en_written' : 'ru';
 }
 
-/** «Подходит мне» по языку: русский и письменный английский (перевод живой — у кандидата есть). */
+/** "Fits me" by language: Russian and written English (the translation is live: the candidate has one). */
 export const langFits = (lang) => lang === 'ru' || lang === 'en_written';
 
-// Слова регионов — для короткого поля «регион» (у площадок оно явное: «USA Only», «Europe», «remote: Thailand, Vietnam»).
+// Region words for the short "region" field (the platforms have it explicit: "USA Only", "Europe", "remote: Thailand, Vietnam").
 const KEYWORDS = {
-  // US / EU / UK — только заглавными (отдельная проверка в classes): «us» в тексте — местоимение
+  // US / EU / UK: uppercase only (a separate check in classes): "us" in the text is a pronoun
   usa: /\b(usa|u\.s\.a?\.?|united states|north america|americas|canada)\b/i,
   europe:
     /\b(europe|european|emea|united kingdom|england|germany|france|spain|poland|portugal|netherlands|ireland|italy|sweden|norway|finland|denmark|switzerland|austria|belgium|czech\w*|romania|lithuania|latvia|estonia|bulgaria|greece|cet|cest)\b/i,
@@ -64,8 +64,8 @@ const KEYWORDS = {
 };
 const WORLD =
   /\b(anywhere|worldwide|world-wide|global(?:ly)?|any ?where in the world|all countries|any country)\b|любой (?:страны|точки мира)/i;
-// «Удалёнка только для своего региона» в тексте вакансии (то же правило, что штраф в lib.js, но с хвостом: «… in Germany»).
-// «Компания находится в …» — не ограничение для кандидата, поэтому голых «located in / based in» здесь нет.
+// "Remote only for its region" in the vacancy text (the same rule as the penalty in lib.js, but with a tail: "… in Germany").
+// "The company is located in …" is not a restriction for the candidate, so bare "located in / based in" are not here.
 const RESTRICT =
   /\b(?:latam|latin america|us[- ]only|usa only|u\.s\. only|us[- ]based|eu[- ]only|north america only|within the us|canada only|uk only|europe only|emea only|(?:must (?:be )?(?:located|based|reside) in|residents? of|candidates? (?:in|from))\s+[a-z ,/&.-]{2,40})/i;
 
@@ -76,12 +76,12 @@ const classes = (s) => {
   return out;
 };
 
-/** Какие регионы называет короткая строка («Remote (EU)», «London, UK»): список из usa / europe / asia / cis / other, пусто — ни одного. */
+/** Which regions a short string names ("Remote (EU)", "London, UK"): a list of usa / europe / asia / cis / other; empty means none. */
 export const regionClasses = classes;
 
 /**
- * Регион вакансии: список из world / cis / europe / usa / asia / other. Русскоязычные площадки — СНГ. Английские: поле
- * «регион» площадки; нет ограничений там — ищем их в начале текста; нет нигде — весь мир (удалёнка открыта любой стране).
+ * Vacancy region: a list of world / cis / europe / usa / asia / other. Russian-speaking platforms are CIS. For English ones: the
+ * platform's "region" field; if there are no restrictions there, we look for them at the start of the text; nowhere means the whole world (remote is open to any country).
  * @returns {string[]}
  */
 export function geoOf(v) {
@@ -89,9 +89,9 @@ export function geoOf(v) {
   const region = String(v.region ?? '');
   const fromRegion = classes(region);
   if (fromRegion.length) return fromRegion;
-  // HN: место работы — в первой строке комментария («Компания | Роль | Remote (US/EU) | …»)
+  // HN: place of work is in the first line of the comment ("Company | Role | Remote (US/EU) | …")
   const text = String(v.text ?? '');
-  // у HN первая строка бывает целым абзацем — берём только короткие части «Компания | Роль | Место | …»
+  // the HN first line is sometimes a whole paragraph; we take only the short parts "Company | Role | Place | …"
   const head =
     v.site === 'hn'
       ? text
@@ -113,19 +113,19 @@ export function geoOf(v) {
   return ['world'];
 }
 
-/** Язык, регион, асинхронность одной вакансии — всё, что экран и фильтры берут из текста. */
+/** Language, region, asynchrony of one vacancy: everything the screen and filters take from the text. */
 export function classify(v) {
   return { lang: langOf(v), geo: geoOf(v), async: isAsyncWork(`${v.title ?? ''}\n${v.description ?? ''}\n${v.text ?? ''}`) };
 }
 
-/** Регион подходит под фильтр: пусто — «весь мир» (без ограничений); иначе вакансия этого региона или открытая всему миру. */
+/** The region fits the filter: empty means "whole world" (no restrictions); otherwise a vacancy of this region or one open to the whole world. */
 export function geoMatches(geo, want) {
   if (!want || want === 'world') return true;
   const g = Array.isArray(geo) && geo.length ? geo : ['world'];
   return g.includes(want) || g.includes('world');
 }
 
-/** Язык подходит под фильтр: all — любой; fit — «подходит мне»; иначе точное значение. */
+/** The language fits the filter: all means any; fit means "fits me"; otherwise the exact value. */
 export function langMatches(lang, want) {
   if (!want || want === 'all') return true;
   if (want === 'fit') return langFits(lang);

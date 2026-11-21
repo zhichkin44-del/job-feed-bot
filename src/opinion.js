@@ -1,8 +1,8 @@
-// «Мнение бота» и короткий текст от первого лица для подборки в бот.
-// Всё — правилами, без модели: стоит ли откликаться, почему и на что сделать упор на разговоре.
+// "Bot's opinion" and a short first-person text for the digest to the bot.
+// All by rules, without a model: whether to apply, why, and what to push on in the conversation.
 import { themeOf, shortText, variantById, salaryById } from './letters.js';
 
-/** На что надавить на созвоне — по теме вакансии (письмо короткое, проекты показываются вживую). */
+/** What to push on in the call, by the vacancy topic (the letter is short, the projects are shown live). */
 const PUSH = {
   agents: 'сделай упор на систему агентов: как они берут задачи и как проверяется результат',
   lead: 'сделай упор на процесс: роли, критерии готовности, проверки, бюджеты',
@@ -11,7 +11,7 @@ const PUSH = {
   default: 'покажи свои проекты вживую',
 };
 
-/** Стоит ли откликаться: короткий вердикт по оценке и рискам. */
+/** Whether to apply: a short verdict by score and risks. */
 function verdict(v) {
   const risks = v.risks ?? [];
   if (risks.includes('нужен английский')) return 'Скорее нет: нужен английский';
@@ -23,8 +23,8 @@ function verdict(v) {
 }
 
 /**
- * Признаки, что совмещать эту работу с другими нельзя или трудно.
- * бот совмещению не мешает — только предупреждает в «мнении».
+ * Signs that combining this job with others is impossible or hard.
+ * the bot does not prevent combining; it only warns in the "opinion".
  */
 export const MULTI_JOB = [
   {
@@ -38,13 +38,13 @@ export const MULTI_JOB = [
   },
 ];
 
-/** Что из MULTI_JOB есть в тексте вакансии (уникально, в порядке списка). */
+/** What from MULTI_JOB is in the vacancy text (unique, in list order). */
 export function multiJobFlags(v) {
   const text = `${v.title ?? ''}\n${v.description ?? ''}\n${v.text ?? ''}`;
   return MULTI_JOB.filter((m) => m.re.test(text)).map((m) => m.why);
 }
 
-/** Одна-две фразы: вердикт, главная причина, на что надавить; признаки запрета совмещения — предупреждением. */
+/** One or two phrases: the verdict, the main reason, what to push on; signs of a combining ban go as a warning. */
 export function opinionOf(v) {
   const why = (v.why ?? []).find((w) => !/^стек:/.test(w)) || (v.why ?? [])[0] || '';
   const theme = themeOf(v);
@@ -54,8 +54,8 @@ export function opinionOf(v) {
   return `${verdict(v)}${reason} На созвоне ${PUSH[theme.id] || PUSH.default}.${multi}`;
 }
 
-/** Короткий текст от первого лица (≤ 256 знаков — предел кнопки copy_text): то же письмо, название укорачивается. */
+/** A short first-person text (up to 256 characters, the copy_text button limit): the same letter, with the title shortened. */
 export function pitchOf(v) {
-  // тот же вариант, что у письма вакансии (учёт вариантов: какой текст ушёл, такой и записан)
+  // the same variant as the vacancy letter (variant tracking: whatever text went out is what gets recorded)
   return shortText(v, 256, variantById(v.letter?.variant) || null, salaryById(v.letter?.salary) || null);
 }

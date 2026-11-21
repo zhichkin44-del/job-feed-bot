@@ -1,6 +1,6 @@
-// Письма бота: 4 короткие строки — приветствие, одна фраза под вакансию,
-// «мои проекты» + ссылка на сайт, «от 600к, если интересно — пишите». Только утверждённые фразы (facts.js) и название вакансии.
-// checkLetter() не пропускает письмо с цифрой не из утверждённых фраз, длиннее 4 строк, без ссылки на сайт или с самовосхвалением.
+// Bot letters: 4 short lines: greeting, one phrase for the vacancy,
+// "my projects" + a link to the site, "from 600k, if interested, write". Only approved phrases (facts.js) and the vacancy title.
+// checkLetter() does not pass a letter with a figure that is not from the approved phrases, longer than 4 lines, without a link to the site, or with self-praise.
 import {
   PROJECTS,
   HOW,
@@ -22,19 +22,19 @@ import {
 } from './facts.js';
 import { EN_SITES } from './lib.js';
 
-/** Тема вакансии по названию (и тексту, если он есть). */
+/** Vacancy topic by title (and by text, if there is one). */
 export function themeOf(v) {
   const title = String(v.title ?? '');
   return THEMES.find((t) => t.re.test(title)) || THEMES.find((t) => t.re.test(String(v.text ?? '').slice(0, 1500))) || DEFAULT_THEME;
 }
 
-/** Какое резюме прикладывать: английское — если вакансия требует английский. */
+/** Which résumé to attach: the English one if the vacancy requires English. */
 export function resumeFor(v, theme = themeOf(v)) {
   if ((v.risks ?? []).includes('нужен английский')) return 'RESUME-EN.md';
   return theme.resume;
 }
 
-/** Название вакансии для письма: без управляющих символов, кавычек-«ёлочек» и разметки, не длиннее 120 знаков. */
+/** Vacancy title for the letter: without control characters, quotation marks and markup, no longer than 120 characters. */
 export function cleanTitle(s) {
   return String(s ?? '')
     .replace(/\p{Cc}/gu, ' ')
@@ -46,8 +46,8 @@ export function cleanTitle(s) {
 }
 
 /**
- * Писать по-английски: английские ленты (HN, Remote OK, WWR, cryptojobslist) и пост англоязычного Telegram-канала —
- * без кириллицы в названии и начале текста (06.11: notificaJobs_AI_MachineLearning, remote_ai_jobs, opento_*).
+ * Write in English: English feeds (HN, Remote OK, WWR, cryptojobslist) and a post from an English-language Telegram channel:
+ * without Cyrillic in the title and at the start of the text (06.11: notificaJobs_AI_MachineLearning, remote_ai_jobs, opento_*).
  */
 export function isEnglish(v) {
   if (EN_SITES.has(v.site)) return true;
@@ -55,25 +55,25 @@ export function isEnglish(v) {
 }
 
 /**
- * Известные варианты писем (id → { kind, lang, template, salary }). Стартовый набор — из facts.js; варианты кандидата из базы
- * регистрирует db.js при открытии и при добавлении. Цифры из текстов и сумм вариантов — его слова, проверка их пропускает.
+ * Known letter variants (id → { kind, lang, template, salary }). The starter set comes from facts.js; the candidate's variants from the database
+ * are registered by db.js on opening and on adding. Figures from the texts and the variant amounts are its own words; the check lets them through.
  */
 const VARIANTS = new Map(SEED_VARIANTS.map((x) => [x.id, x]));
 export function registerVariant(variant) {
   if (variant?.id && variant.template) VARIANTS.set(variant.id, variant);
 }
 export const variantById = (id) => VARIANTS.get(String(id ?? ''));
-/** Вариант по умолчанию (без базы): первый из стартового набора для вида и языка. */
+/** Default variant (without a database): the first one from the starter set for the kind and language. */
 export const defaultVariant = (kind, lang) => SEED_VARIANTS.find((x) => x.kind === kind && x.lang === lang);
 
-/** Суммы — отдельная переменная теста (id → { lang, value }); суммы кандидата из базы регистрирует db.js. */
+/** Amounts are a separate test variable (id → { lang, value }); the candidate's amounts from the database are registered by db.js. */
 const SALARIES = new Map(SEED_SALARIES.map((x) => [x.id, x]));
 export function registerSalary(s) {
   if (s?.id && s.value) SALARIES.set(s.id, s);
 }
 export const salaryById = (id) => SALARIES.get(String(id ?? ''));
 
-/** Подставить места шаблона; {title} — отдельно (его укорачивают под длину). */
+/** Substitute the template placeholders; {title} separately (it is shortened to fit the length). */
 function fill(template, map) {
   let out = String(template);
   for (const [k, val] of Object.entries(map)) out = out.replaceAll(`{${k}}`, String(val ?? ''));
@@ -81,8 +81,8 @@ function fill(template, map) {
 }
 
 /**
- * Письмо на вакансию по шаблону варианта, не длиннее max знаков: название вакансии укорачивается. Тот же текст —
- * в кнопке «Скопировать текст» (max 256, предел copy_text в Telegram).
+ * The letter for a vacancy by the variant's template, no longer than max characters: the vacancy title is shortened. The same text
+ * is in the "Copy text" button (max 256: the copy_text limit in Telegram).
  */
 export function shortText(v, max = SHORT.max, variant = null, salary = null) {
   const en = isEnglish(v);
@@ -97,8 +97,8 @@ export function shortText(v, max = SHORT.max, variant = null, salary = null) {
 }
 
 /**
- * Письмо под вакансию: { text, theme, resume, projects, v, variant, salary } — контракт L3 (+ lang у английского).
- * salary — id суммы из теста (или null — сумма варианта по умолчанию).
+ * The letter for the vacancy: { text, theme, resume, projects, v, variant, salary }: contract L3 (+ lang for English).
+ * salary: the amount id from the test (or null: the default variant's amount).
  * @returns {{ text: string, theme: string, projects: string[], v: number, variant: string, salary: string | null,
  *   resume: string, lang?: string }}
  */
@@ -112,31 +112,31 @@ export function composeLetter(v, { variant = null, salary = null } = {}) {
   return { ...common, resume: resumeFor(v, theme) };
 }
 
-/** Прямое письмо компании по шаблону варианта: {компания}, {фраза}, {site}, {salary}. */
+/** A direct letter to a company by the variant's template: {company}, {фраза}, {site}, {salary}. */
 export const fillDirect = (variant, c, salary = null) =>
   fill(variant.template, {
     компания: String(c.name ?? '').trim(),
     фраза: String(c.phrase ?? '').trim(),
     site: variant.lang === 'en' ? SITE_EN : `${SITE}/`,
     salary: salary?.value || variant.salary,
-    // откуда адрес — страница, где контакт опубликован (GDPR ст. 14(3)(b): сказать при первом контакте)
+    // where the address comes from: the page where the contact is published (GDPR art. 14(3)(b): say it at first contact)
     source: String(c.contact?.source_url ?? '').trim(),
   });
 
-/** Английское письмо (вакансии HN, Remote OK, WWR, cryptojobslist) — тот же короткий шаблон. */
+/** English letter (vacancies from HN, Remote OK, WWR, cryptojobslist): the same short template. */
 export function composeLetterEn(v) {
   return composeLetter({ ...v, site: EN_SITES.has(v.site) ? v.site : 'wwr' });
 }
 
-/** Письмо в базе собрано старым шаблоном — пересобрать перед подборкой. */
+/** A letter in the database was assembled with an old template: rebuild it before the digest. */
 export const letterStale = (letter) => !letter || letter.v !== LETTER_VERSION;
 
 const numbersIn = (s) => (String(s).match(/\d+(?:[.,]\d+)?/g) || []).map((n) => n.replace(',', '.'));
 
 /**
- * Проверка письма: цифры — только из утверждённых фраз, названия вакансии и ссылок; 2–4 непустые строки, не длиннее
- * SHORT.max; есть ссылка на сайт; нет самовосхваления и снятых формулировок (в названии вакансии не ищем).
- * Возвращает { ok, unknown[] } и problems[], если что-то кроме цифр не так.
+ * Letter check: figures only from the approved phrases, the vacancy title and links; 2–4 non-empty lines, no longer than
+ * SHORT.max; a link to the site is present; no self-praise and no withdrawn wordings (we do not search the vacancy title).
+ * Returns { ok, unknown[] } and problems[] if anything other than the figures is wrong.
  */
 export function checkLetter(letterText, vacancyTitle = '', { site: needSite = true, max = SHORT.max, lines: limit = LETTER_LINES } = {}) {
   const text = String(letterText ?? '');

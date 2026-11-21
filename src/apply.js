@@ -1,8 +1,8 @@
-// Как откликнуться на вакансию законно: только ссылки, которые открывают нужное место с готовым текстом.
-// Отправляет всегда сам кандидат — бот не входит в его почту, Telegram или аккаунт hh.
+// How to apply to a vacancy legally: only links that open the right place with the ready text.
+// The candidate always sends it themselves: the bot does not log into their email, Telegram or hh account.
 import { safeUrl, EN_SITES } from './lib.js';
 
-/** Подпись кнопки «открыть вакансию» по площадке. */
+/** Caption of the "open the vacancy" button, by platform. */
 const SITE_LABEL = {
   hn: 'Открыть на Hacker News',
   remoteok: 'Открыть на Remote OK',
@@ -12,11 +12,11 @@ const SITE_LABEL = {
   remotive: 'Открыть на Remotive',
 };
 
-const MAILTO_MAX = 1800; // часть почтовых программ обрезает длинные mailto — дальше письмо копируется вручную
+const MAILTO_MAX = 1800; // some mail clients cut long mailto links: beyond this the letter is copied by hand
 const TG_MAX = 2000;
 
 /**
- * Ссылки для отклика: вакансия на площадке; почта и Telegram — только если работодатель сам указал их в тексте вакансии.
+ * Application links: the vacancy on the platform; email and Telegram only if the employer stated them in the vacancy text.
  * @returns {{ kind: string, label: string, url: string, full: boolean }[]} kind — site | email | telegram
  */
 export function applyLinks(v, letterText = '') {

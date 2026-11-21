@@ -1,4 +1,4 @@
-// Отправка в Telegram: токен только из аргумента (окружения), без callback-кнопок, ошибки не роняют отправку и не светят токен.
+// Sending to Telegram: the token only from an argument (environment), without callback buttons; errors neither break the sending nor expose the token.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { prepare, sendAll, workingKeyboard } from '../src/send.js';
@@ -15,14 +15,14 @@ const msg = {
   },
 };
 
-test('в отправку идут только кнопки без callback_data', () => {
+test('only buttons without callback_data go out', () => {
   const kb = workingKeyboard(msg.reply_markup);
   assert.equal(kb.inline_keyboard.length, 2);
   assert.equal(workingKeyboard({ inline_keyboard: [[{ text: 'x', callback_data: 'a' }]] }), undefined);
   assert.equal('reply_markup' in prepare([{ text: 't' }])[0], false);
 });
 
-test('сообщения уходят в sendMessage с chat_id, токен в адресе запроса', async () => {
+test('messages go to sendMessage with chat_id, the token is in the request address', async () => {
   const calls = [];
   const fetchImpl = async (url, init) => {
     calls.push({ url, body: JSON.parse(init.body) });
@@ -35,7 +35,7 @@ test('сообщения уходят в sendMessage с chat_id, токен в �
   assert.equal(calls[0].body.reply_markup.inline_keyboard.length, 2);
 });
 
-test('ошибка Telegram и сетевой сбой считаются, остальные сообщения уходят; токен из текста ошибки убирается', async () => {
+test('a Telegram error and a network failure are counted, the other messages go out; the token is removed from the error text', async () => {
   let n = 0;
   const fetchImpl = async () => {
     n++;
@@ -50,6 +50,6 @@ test('ошибка Telegram и сетевой сбой считаются, ос�
   assert.ok(!JSON.stringify(r.failed).includes('TEST_TOKEN'));
 });
 
-test('без токена или чата отправка не начинается', async () => {
+test('without a token or a chat the sending does not start', async () => {
   await assert.rejects(() => sendAll([msg], { token: '', chatId: '42', fetchImpl: async () => assert.fail('не должно') }), /TELEGRAM_BOT_TOKEN/);
 });
