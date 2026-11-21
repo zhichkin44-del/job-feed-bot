@@ -74,7 +74,7 @@ function rescore(o) {
     return { ...v, ...scoreVacancy(v, { today, details }) };
   });
   const sites = SITES.filter((s) => o.sites.includes(s.id));
-  finish({ o, date: data.date, all, counts500: data.counts500 ?? [], errors: data.errors ?? [], sites, note: 'пересчёт без сети' });
+  finish({ o, date: data.date, all, counts500: data.counts500 ?? [], errors: data.errors ?? [], sites, note: 're-scored offline' });
 }
 
 function finish({ o, date, all, counts500, errors, sites, note }) {
@@ -98,8 +98,8 @@ function finish({ o, date, all, counts500, errors, sites, note }) {
     JSON.stringify({ date, counts500, errors, vacancies: all.sort((a, b) => b.score - a.score) }, null, 2),
   );
   process.stdout.write(
-    `Радар ${date}: ${note}, вакансий ${all.length}, по профилю ${kept.length}, ошибок ${errors.length}.\n` +
-      `Отчёт: ${join(o.out, `${date}.md`)}\n`,
+    `Radar ${date}: ${note}, vacancies ${all.length}, matching the profile ${kept.length}, errors ${errors.length}.\n` +
+      `Report: ${join(o.out, `${date}.md`)}\n`,
   );
   if (o.digest) secretary({ o, date, kept: dedupe(kept) });
 }
@@ -126,8 +126,8 @@ function secretary({ o, date, kept }) {
     writeFileSync(seenFile, JSON.stringify(seen, null, 2));
   }
   process.stdout.write(
-    `бот: режим ${cfg.mode}, в подборке ${ok.length}, письма отклонены проверкой: ${rejected.length}. ` +
-      `Файл: ${join(o.out, `digest-${date}.md`)} (в бот ничего не отправлено)\n`,
+    `bot: mode ${cfg.mode}, in the digest ${ok.length}, letters rejected by the check: ${rejected.length}. ` +
+      `File: ${join(o.out, `digest-${date}.md`)} (nothing sent to the bot)\n`,
   );
 }
 
@@ -136,6 +136,6 @@ function secretary({ o, date, kept }) {
   if (o.rescore) rescore(o);
   else await main(o);
 })().catch((e) => {
-  process.stderr.write(`радар упал: ${e.stack ?? e}\n`);
+  process.stderr.write(`radar crashed: ${e.stack ?? e}\n`);
   process.exit(1);
 });

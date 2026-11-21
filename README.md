@@ -24,6 +24,12 @@ Who it is for: a job seeker who wants a short, verified daily shortlist without 
 - **Telegram digest:** card messages with links and copy-text buttons. Sending is opt-in (`--yes`).
 - **Reports and tests:** Markdown and JSON reports per run; 44 unit tests, no network access in tests.
 
+## Screenshots
+
+The bot's digest in Telegram, rendered from the sample run (`npm run sample`, fictional vacancies). The bot writes in Russian for the Russian job market; this screenshot shows the same messages translated to English.
+
+![Telegram digest: vacancy cards, buttons and the cover letter](docs/screenshots/telegram-digest.png)
+
 ## Requirements
 
 - Node.js 20 or newer (tested on Node 24). No npm dependencies.
@@ -54,7 +60,7 @@ Windows, Terminal on macOS/Linux).
    npm run sample
    ```
 
-   Expected output: console status lines (in Russian), for example `Радар 2026-11-18: ... вакансий 6, по профилю 4, ошибок 0`, and the
+   Expected output: console status lines, for example `Radar 2026-11-18: re-scored offline, vacancies 6, matching the profile 4, errors 0.`, and the
    files `data/<date>.md`, `data/<date>.json`, `data/digest-<date>.md`, `data/digest-<date>.tg.json`.
 
 4. Run the tests:

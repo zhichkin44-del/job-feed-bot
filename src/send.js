@@ -32,7 +32,7 @@ export function prepare(messages) {
  * @returns {Promise<{ sent: number, failed: { index: number, error: string }[] }>}
  */
 export async function sendAll(messages, { token, chatId, fetchImpl = fetch, pauseMs = 1100 }) {
-  if (!token || !chatId) throw new Error('нужны TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в окружении');
+  if (!token || !chatId) throw new Error('TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in the environment');
   let sent = 0;
   const failed = [];
   for (const [index, m] of prepare(messages).entries()) {
@@ -55,17 +55,17 @@ export async function sendAll(messages, { token, chatId, fetchImpl = fetch, paus
 
 async function cli(argv) {
   const file = argv.find((a) => !a.startsWith('--'));
-  if (!file) throw new Error('укажите файл digest-<дата>.tg.json');
+  if (!file) throw new Error('pass the file digest-<date>.tg.json');
   const messages = JSON.parse(readFileSync(file, 'utf8'));
-  if (!Array.isArray(messages)) throw new Error('в файле ожидается список сообщений');
+  if (!Array.isArray(messages)) throw new Error('the file must contain a list of messages');
   if (!argv.includes('--yes')) {
-    process.stdout.write(`Будет отправлено сообщений: ${messages.length}. Для отправки добавьте --yes.\n`);
+    process.stdout.write(`Messages to send: ${messages.length}. Add --yes to send.\n`);
     for (const m of prepare(messages)) process.stdout.write(`---\n${String(m.text).replace(/<[^>]+>/g, '')}\n`);
     return;
   }
   const { sent, failed } = await sendAll(messages, { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID });
-  process.stdout.write(`Отправлено: ${sent}, ошибок: ${failed.length}.\n`);
-  for (const f of failed) process.stderr.write(`сообщение ${f.index + 1}: ${f.error}\n`);
+  process.stdout.write(`Sent: ${sent}, errors: ${failed.length}.\n`);
+  for (const f of failed) process.stderr.write(`message ${f.index + 1}: ${f.error}\n`);
   if (failed.length) process.exitCode = 1;
 }
 
