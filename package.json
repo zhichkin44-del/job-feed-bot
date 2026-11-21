@@ -11,6 +11,6 @@
     "start": "node src/radar.js",
     "sample": "node src/radar.js --rescore sample/run.json --digest --no-seen --out data",
     "send": "node src/send.js",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node scripts/run-tests.mjs"
   }
 }
